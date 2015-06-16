@@ -68,9 +68,9 @@ times. \newline
 PostgreSQL ensures atomiticy consistency and isolation using Multi Version
 Concurrency Control (MVCC). The mechanism is incredibly efficient, it offers
 great level of concurrency while keeping the transaction's snapshots isolated
-and consistent. There is a single disadvantage in the implementation. We'll see
-in detail in \ref{sec:MVCC} how MVCC works and the reason why there's no such
-thing as an update in PostgreSQL.
+and consistent. There is a single disadvantage in the implementation. We'll
+see in detail in section \ref{sec:MVCC} how MVCC works and the reason why
+there's no such thing as an update in PostgreSQL.
 
 \subsection{Write ahead logging}
 
@@ -147,7 +147,7 @@ PostgreSQL\index{platform} supports almost any unix flavour, and from version
 \subsection{Tablespaces}
 
 The tablespace support permits a fine grained distribution of the data files
-across filesystems. In chapters \ref{sub:TBS-LOGICAL} and
+across filesystems. In sections \ref{sub:TBS-LOGICAL} and
 \ref{sub:TBS-PHYSICAL} we'll see how to take advantage of this powerful
 feature.
 
@@ -168,7 +168,7 @@ views joining two or more tables, cannot be updated.
 
 PostgreSQL supports primary keys and unique keys to enforce a table's data. The
 referential integrity is guaranteed with foreign keys. We'll take a look to the
-data integrity in \ref{cha:DATAINT}
+data integrity in chapter \ref{cha:DATAINT}.
 
 \subsection{Extension system}
 

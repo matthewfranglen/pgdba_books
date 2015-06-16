@@ -18,7 +18,7 @@
 
 \author{Federico Campoli}
 \title{PostgreSQL Database Administration \\ Volume 1 \\ Basic concepts}
-\date{First edition, 2015, some rights reserved} 
+\date{First edition, 2015, some rights reserved}
 
 \makeindex
 
@@ -48,13 +48,13 @@
  \includegraphics{images/cc_logo.png}
 \end{center}
 
-The book is distributed under the terms of the Attribution-NonCommercial-ShareAlike 4.0 International 
+The book is distributed under the terms of the Attribution-NonCommercial-ShareAlike 4.0 International
 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.\newline
 
 
 You are free to:
 \begin{itemize}
- 
+
 \item     Share — copy and redistribute the material in any medium or format
 \item     Adapt — remix, transform, and build upon the material
 
@@ -63,16 +63,16 @@ You are free to:
 
 Under the following terms:
 \begin{itemize}
-\item    Attribution — You must give appropriate credit, provide a link to the license, and indicate if 
-changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor 
+\item    Attribution — You must give appropriate credit, provide a link to the license, and indicate if
+changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor
 endorses you or your use.
 
 \item    NonCommercial — You may not use the material for commercial purposes.
 
-\item    ShareAlike — If you remix, transform, or build upon the material, you must distribute your 
+\item    ShareAlike — If you remix, transform, or build upon the material, you must distribute your
 contributions under the same license as the original.
 
-\item    No additional restrictions — You may not apply legal terms or technological measures that legally 
+\item    No additional restrictions — You may not apply legal terms or technological measures that legally
 restrict others from doing anything the license permits.
 
 \end{itemize}
@@ -84,25 +84,25 @@ First edition\newline
 ISBN 978-1-326-14892-8\newline %CROWN QUARTO FORMAT ISBN
 
 
- 
+
 
 
 
 \chapter*{Preface}
-When I first came up with the idea to write a PostgreSQL DBA book, my intention was to 
+When I first came up with the idea to write a PostgreSQL DBA book, my intention was to
 publish it commercially.\newline
 
-Shortly I changed my mind as I became aware the uniqueness of a book for the database 
-administrators. Then I decided to keep this book free. The same will happen for the 
-next books in this series. I hope this will spread the knowledge on PostgreSQL becoming an 
+Shortly I changed my mind as I became aware the uniqueness of a book for the database
+administrators. Then I decided to keep this book free. The same will happen for the
+next books in this series. I hope this will spread the knowledge on PostgreSQL becoming an
 useful reference.\newline
 
-Just a quick advice before you start reading. I beg your pardon in advance for my 
-bad English. Unfortunately I'm not native English and it's very likely the book to be full of 
+Just a quick advice before you start reading. I beg your pardon in advance for my
+bad English. Unfortunately I'm not native English and it's very likely the book to be full of
 typos and bad grammar.\newline
 
-However, if you want to help me in cleaning and reviewing the text please fork 
-the github repository where I have shared the latex sources 
+However, if you want to help me in cleaning and reviewing the text please fork
+the github repository where I have shared the latex sources
 \href{https://github.com/the4thdoctor/pgdba\_books}{
 https://github.com/the4thdoctor/pgdba\_books}.\newline
 
@@ -118,11 +118,11 @@ The book covers the basic aspects of database administration from installation
 to cluster management.\newline
 
 A couple of chapters are dedicated to the logical and physical structure in
-order to show two sides of the same coin.  The triplet of maintenance, backup and restore completes the 
+order to show two sides of the same coin.  The triplet of maintenance, backup and restore completes the
 the picture. This is not exhaustive but is good enough to start getting ``hands on'' with the database.
-The final chapter is dedicated to the developers. The various sections 
+The final chapter is dedicated to the developers. The various sections
 give advice that can seem quite obvious. It's better to repeat things instead of making dangerous
-mistakes when building an application. 
+mistakes when building an application.
 
 \chapter*{Version and platform}
 This book is based on PostgreSQL version 9.3 running on Debian GNU Linux 7.

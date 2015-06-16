@@ -18,7 +18,7 @@ The pg\_hba.conf structure is shown in \ref{tab:PGHBA}
 
 \begin{table}[H]
   \begin{tabular}{ccccc}
-    Type & Database & User & Address & Method \\ 
+    Type & Database & User & Address & Method \\
     \hline
     local & name & name & ipaddress/network mask & trust\\
     host & * & * & host name & reject\\
@@ -54,11 +54,11 @@ challenge to kerberos.\newline
 We'll now take a look to the built in methods.
 
 \begin{itemize}
- \item \textbf{trust}: The connection is authorised without any further action. Is quite useful 
+ \item \textbf{trust}: The connection is authorised without any further action. Is quite useful
 if the password is lost. Use it with caution.
 
-\item \textbf{peer}: The connection is authorised if the OS user matches the 
-database user. It's useful for the local connections. 
+\item \textbf{peer}: The connection is authorised if the OS user matches the
+database user. It's useful for the local connections.
 
 \item \textbf{password}: The connection establishes if the connection's user and the password
 matches with the values stored in the pg\_shadow system table. This method sends the password in
@@ -81,15 +81,15 @@ Unfortunately this approach have a couple of unpleasant side effects.\newline
 
 Changing any connection related parameter like the max\_connections, requires a cluster restart.
 For this reason planning the resources is absolutely vital. For each connection present in
- max\_connections the cluster allocates 400 bytes of shared memory. For each connection established 
+ max\_connections the cluster allocates 400 bytes of shared memory. For each connection established
 the cluster allocates a per user memory area wich size is determined by the parameter
 work\_mem.\newline
 
-For example let's consider a cluster with a shared\_buffer set to 512 MB and the work\_mem 
+For example let's consider a cluster with a shared\_buffer set to 512 MB and the work\_mem
 set to 100MB. Setting the max\_connections to only 500 requires a potentially 49 GB of total memory
 if all the connections are in use. Because the work\_mem can affects the performances, its
 value should be determined carefully. Being a per user memory any change to work\_mem does not
-require the cluster's start but a simple reload.\newline 
+require the cluster's start but a simple reload.\newline
 
 In this kind of situations a connection pooler can be a good solutions. The sophisticated
 \href{http://www.pgpool.net/}{pgpool}  or the
@@ -110,39 +110,39 @@ Changing the parameters max\_connections and listen\_addresses require the clust
 Unlikely other DBMS, a PostgreSQL connection requires the database name in the connection string.
 Sometimes this can be omitted in psql when this information is supplied in another way.\newline
 
-When omitted psql checks if the environment variable \$PGDATABASE \index{\$PGDATABASE variable} is 
-set. If \$PGDATABASE is missing then psql defaults the database name to connection's username. This 
-leads to confusing error messages. For example, if we have a username named test but not a database 
+When omitted psql checks if the environment variable \$PGDATABASE \index{\$PGDATABASE variable} is
+set. If \$PGDATABASE is missing then psql defaults the database name to connection's username. This
+leads to confusing error messages. For example, if we have a username named test but not a database
 named test the connection will fail even with the correct credentials.
 
 \begin{verbatim}
 postgres@tardis:~$ psql -U test -h localhost
-Password for user test: 
+Password for user test:
 psql: FATAL:  database "test" does not exist
 \end{verbatim}
 
 This error appears because the pg\_hba.conf allow the connection for any database. Even for a not
-existing one. The connection is then terminated when the backend ask to connect to the database 
+existing one. The connection is then terminated when the backend ask to connect to the database
 named test which does not exists.\newline
 
-This is very common for the new users. The solution is incredibly simple because in a PostgreSQL 
-cluster there are at least three databases. Passing the name template1 as last parameter will do 
+This is very common for the new users. The solution is incredibly simple because in a PostgreSQL
+cluster there are at least three databases. Passing the name template1 as last parameter will do
 the trick.
 
 \begin{verbatim}
 postgres@tardis:~$ psql -U test -h localhost template1
-Password for user test: 
+Password for user test:
 psql (9.3.4)
 SSL connection (cipher: DHE-RSA-AES256-SHA, bits: 256)
 Type "help" for help.
 \end{verbatim}
 
-When the connection is established we can query the system table pg\_database to get the 
-cluster's database list. 
+When the connection is established we can query the system table pg\_database to get the
+cluster's database list.
 
 \begin{lstlisting}[style=pgsql]
 template1=> SELECT datname FROM pg_database;
-    datname    
+    datname
 ---------------
  template1
  template0
@@ -152,14 +152,14 @@ template1=> SELECT datname FROM pg_database;
 \end{lstlisting}
 
 Database administrators coming from other DBMS can be confused by the postgres database.
-This database have nothing special. Its creation was added since the version 8.4 because it was 
-useful to have it. You can just ignore it or use it for testing purposes. Dropping the postgres 
-database does not corrupts the cluster. Because this database is often used by third party 
+This database have nothing special. Its creation was added since the version 8.4 because it was
+useful to have it. You can just ignore it or use it for testing purposes. Dropping the postgres
+database does not corrupts the cluster. Because this database is often used by third party
 tools before dropping it check if is in use in any way.\newline
 
-The databases template0 and template1 \index{template1 database} \index{template0 
-database} like the name suggests are the template databases. A template database \index{template 
-database} is used to build new database copies via the physical file copy. 
+The databases template0 and template1 \index{template1 database} \index{template0
+database} like the name suggests are the template databases. A template database \index{template
+database} is used to build new database copies via the physical file copy.
 
 When initdb initialises the data area the database template1 is populated with the correct
 references to the WAL records, the system views and the procedural language PL/PgSQL. When
@@ -167,29 +167,29 @@ this is done the database template0 and the postgres databases are then created 
 database.
 
 The database template0 doesn't allow the connections. It's main usage is to rebuild the
-database template1 if it gets corrupted or for creating databases with a character encoding/ctype, 
-different from the cluster wide settings. 
+database template1 if it gets corrupted or for creating databases with a character encoding/ctype,
+different from the cluster wide settings.
 \index{CREATE DATABASE}
 
 \begin{lstlisting}[style=pgsql]
 postgres=# CREATE DATABASE db_test WITH ENCODING 'UTF8' LC_CTYPE 'en_US.UTF-8';
-ERROR:  new LC_CTYPE (en_US.UTF-8) is incompatible with the LC_CTYPE of the 
+ERROR:  new LC_CTYPE (en_US.UTF-8) is incompatible with the LC_CTYPE of the
 template database (en_GB.UTF-8)
-HINT:  Use the same LC_CTYPE as in the template database, or use template0 as 
+HINT:  Use the same LC_CTYPE as in the template database, or use template0 as
 template.
 
-postgres=# CREATE DATABASE db_test WITH ENCODING 'UTF8' LC_CTYPE 'en_US.UTF-8' 
+postgres=# CREATE DATABASE db_test WITH ENCODING 'UTF8' LC_CTYPE 'en_US.UTF-8'
 TEMPLATE template0;
 CREATE DATABASE
-postgres=# 
+postgres=#
 
 \end{lstlisting}
 
-If the template is omitted the CREATE DATABASE statement will use template1 by default. 
+If the template is omitted the CREATE DATABASE statement will use template1 by default.
 
 
-A database can be renamed or dropped with ALTER DATABASE and DROP DATABASE \index{ALTER 
-DATABASE}\index{DROP DATABASE} statements. Those operations require the exclusive access to the 
+A database can be renamed or dropped with ALTER DATABASE and DROP DATABASE \index{ALTER
+DATABASE}\index{DROP DATABASE} statements. Those operations require the exclusive access to the
 affected database. If there are connections established the drop or rename will fail.
 
 \begin{lstlisting}[style=pgsql]
@@ -208,7 +208,7 @@ DROP DATABASE
 \label{sec:TABLES}
 In our top down approach to the PostgreSQL's logical model, the next step is the relation.
 In the PostgreSQL jargon a relation is an object which carries the data or the way to
-retrieve the data. A relation can have a physical counterpart or be purely logical. We'll take a 
+retrieve the data. A relation can have a physical counterpart or be purely logical. We'll take a
 look in particular to three of them starting with the tables.\newline
 
 A table is the fundamental storage unit for the data. PostgreSQL implements many kind of tables
@@ -220,29 +220,29 @@ implements three kind of tables.
 \subsection{Logged tables}\index{Logged tables}
 By default CREATE TABLE creates a logged table. This kind of table implements the durability
 logging any change to the write ahead log. The data pages are loaded in the shared buffer and any
-change to them is logged first to the WAL. The consolidation to the the data file happens later. 
+change to them is logged first to the WAL. The consolidation to the the data file happens later.
 
 \subsection{Unlogged tables}\index{Unlogged tables}
 \label{sub:UNLOGGEDTABLES}
-An unlogged table have the same structure like the logged table. The difference is such kind of 
-tables are not crash safe. The data is still consolidated to the data file but the pages modified 
-in memory do not write their changes to the WAL. The main advantage is the write operations which 
+An unlogged table have the same structure like the logged table. The difference is such kind of
+tables are not crash safe. The data is still consolidated to the data file but the pages modified
+in memory do not write their changes to the WAL. The main advantage is the write operations which
 are considerably faster at the cost of the data durability. The data stored into an ulogged table
 should be considered partially volatile. The database will truncate those tables when the crash
-recovery occurs. Because the unlogged table don't write to the WAL, those tables are not accessible 
-on a physical standby. 
+recovery occurs. Because the unlogged table don't write to the WAL, those tables are not accessible
+on a physical standby.
 
 \subsection{Temporary tables}\index{Temporary tables}
-A temporary table is a relation which lives into the backend's local memory. When the connection 
-ends the table is dropped. Those table can have the same name for all the sessions because 
-they are completely isolated. If the amount of data stored into the table is lesser than 
-the temp\_buffers value the table will fit in memory with great speed advantage. Otherwise the 
-database will create a temporary relation on disk. The parameter temp\_buffers can be altered for 
-the session but only before the first temporary table is created. 
+A temporary table is a relation which lives into the backend's local memory. When the connection
+ends the table is dropped. Those table can have the same name for all the sessions because
+they are completely isolated. If the amount of data stored into the table is lesser than
+the temp\_buffers value the table will fit in memory with great speed advantage. Otherwise the
+database will create a temporary relation on disk. The parameter temp\_buffers can be altered for
+the session but only before the first temporary table is created.
 
 
 \subsection{Foreign tables}\index{Foreign tables}
-The foreign tables were first introduced with PostgreSQL 9.1 as read only relations, improving 
+The foreign tables were first introduced with PostgreSQL 9.1 as read only relations, improving
 considerably the DBMS connectivity with other data sources. A foreign table works exactly like a
 local table. A foreign data wrapper interacts with the foreign data source and handles the
 data flow.\newline
@@ -257,9 +257,9 @@ PostgreSQL is an Object Relational Database Management System rather a simple DB
 concepts present in the object oriented programming are implemented in the PostgreSQL logic. The
 relations are also known as classes and the table's columns as attributes. \newline
 
-The table inheritance is a logical relationship between a parent table and one or more child 
+The table inheritance is a logical relationship between a parent table and one or more child
 tables. The child table inherits the parent's attribute structure but not the physical
-storage.\newline 
+storage.\newline
 
 
 Creating a parent/child structure is straightforward.
@@ -271,27 +271,27 @@ db_test=#CREATE TABLE t_parent
                           v_data        character varying(300)
                       );
 
-CREATE TABLE                     
+CREATE TABLE
 
 db_test=#CREATE TABLE t_child_01
-                      
+
                       ()
              INHERITS (t_parent)
-                      ;                      
+                      ;
 db_test=# \d t_parent
             Table "public.t_parent"
-  Column   |          Type          | Modifiers 
+  Column   |          Type          | Modifiers
 -----------+------------------------+-----------
- i_id_data | integer                | 
- v_data    | character varying(300) | 
+ i_id_data | integer                |
+ v_data    | character varying(300) |
 Number of child tables: 1 (Use \d+ to list them.)
 
-db_test=# \d t_child_01 
+db_test=# \d t_child_01
            Table "public.t_child_01"
-  Column   |          Type          | Modifiers 
+  Column   |          Type          | Modifiers
 -----------+------------------------+-----------
- i_id_data | integer                | 
- v_data    | character varying(300) | 
+ i_id_data | integer                |
+ v_data    | character varying(300) |
 Inherits: t_parent
 
 \end{lstlisting}
@@ -340,7 +340,7 @@ WHERE
 
 \end{lstlisting}
 
-Having an efficient maintenance plan can improve sensibly the database performance. Take a look to 
+Having an efficient maintenance plan can improve sensibly the database performance. Take a look to
 \ref{cha:MAINTENANCE} for more information.
 
 PostgreSQL implements many kind of indices. The keyword USING specifies the index type at create time.
@@ -353,7 +353,7 @@ If the clause USING is omitted the index defaults to the B-tree.
 
 \subsection{b-tree}
 The general purpose B-tree\index{index,b-tree} index implements the Lehman and Yao's
-high-concurrency B-tree management algorithm. The B-tree can handle equality and range queries 
+high-concurrency B-tree management algorithm. The B-tree can handle equality and range queries
 returning ordered data. The indexed values are stored into the index pages with the pointers to the
 table's pages. Because the index is a relation not TOASTable the max length for an indexed key is 1/3
 of the page size. More informations about TOAST are in \ref{sec:TOAST} \newline
@@ -365,7 +365,7 @@ are not replayed if the crash recovery occurs and do not propagate to the standb
 \subsection{GiST}
 The GiST indices\index{index,GiST} are the Generalised Search Tree. The GiST is a collection of
 indexing strategies organised under a common infrastructure. They can implement arbitrary indexing
-schemes like B-trees, R-trees  or other. The default installation comes with operator classes working on 
+schemes like B-trees, R-trees  or other. The default installation comes with operator classes working on
 two elements geometrical data and for the nearest-neighbour searches. The GiST indices do not perform an
 exact match. The false positives are removed with second rematch on the table's data.\newline
 
@@ -389,13 +389,13 @@ original table.
 \begin{lstlisting}[style=pgsql]
 
 
-CREATE TABLE t_data 
-        ( 
+CREATE TABLE t_data
+        (
                 i_id            serial,
                 t_content       text
         );
 
-ALTER TABLE t_data 
+ALTER TABLE t_data
 ADD CONSTRAINT pk_t_data PRIMARY KEY (i_id);
 
 
@@ -413,18 +413,18 @@ FROM
                         generate_series(1,200) as i_counter
         ) t_series;
 
-CREATE OR REPLACE VIEW v_data 
-AS 
-  SELECT 
+CREATE OR REPLACE VIEW v_data
+AS
+  SELECT
           *
-  FROM 
+  FROM
         t_data;
 
 
 \end{lstlisting}
 
 We can select from the view and from the the table with a SELECT and get the same data. The view's
-definition in pg\_views shows no wildcard though. 
+definition in pg\_views shows no wildcard though.
 
 
 \begin{lstlisting}[style=pgsql]
@@ -445,36 +445,36 @@ If we add a new field to the table t\_data this will not applies to the view.
 
 \begin{lstlisting}[style=pgsql]
  ALTER TABLE t_data ADD COLUMN d_date date NOT NULL default now()::date;
- 
+
  db_test=# SELECT * FROM t_data LIMIT 1;
- i_id |            t_content             |   d_date   
+ i_id |            t_content             |   d_date
 ------+----------------------------------+------------
     1 | c4ca4238a0b923820dcc509a6f75849b | 2014-05-21
 (1 row)
 
 
 db_test=# SELECT * FROM v_data LIMIT 1;
- i_id |            t_content             
+ i_id |            t_content
 ------+----------------------------------
     1 | c4ca4238a0b923820dcc509a6f75849b
 (1 row)
 
 
- 
+
 \end{lstlisting}
 
 Using the statement CREATE OR REPLACE VIEW we can put the view in sync with the table's structure.
 
 \begin{lstlisting}[style=pgsql]
- CREATE OR REPLACE VIEW v_data 
-AS 
-  SELECT 
+ CREATE OR REPLACE VIEW v_data
+AS
+  SELECT
         *
-  FROM 
+  FROM
         t_data;
-        
+
 db_test=# SELECT * FROM v_data LIMIT 1;
- i_id |            t_content             |   d_date   
+ i_id |            t_content             |   d_date
 ------+----------------------------------+------------
     1 | c4ca4238a0b923820dcc509a6f75849b | 2014-05-21
 (1 row)
@@ -514,7 +514,7 @@ simple views. A view is defined simple when the following is true.
  \item Does not contain WITH, DISTINCT, GROUP BY, HAVING,LIMIT, or OFFSET clauses at the top level.
 
  \item  Does not contain set operations (UNION, INTERSECT or EXCEPT) at the top level
- 
+
  \item   All columns in the view's select list must be simple references to columns of the
 underlying relation. They cannot be expressions, literals or functions. System columns cannot be
 referenced, either.
@@ -529,19 +529,19 @@ A complex view can still become updatable using the triggers or the rules.\newli
 
 \index{view, materialised}
 Another feature introduced by the 9.3 is the materialised views. This acts like a physical snapshot of
-the saved SQL. The view's data can be refreshed with the statement REFRESH MATERIALIZED VIEW.  
+the saved SQL. The view's data can be refreshed with the statement REFRESH MATERIALIZED VIEW.
 
 
 \section{Tablespaces}\index{tablespaces,logical}
 \label{sub:TBS-LOGICAL}
-A tablespace\index{tablespace} is a logical name pointing to a physical location. 
+A tablespace\index{tablespace} is a logical name pointing to a physical location.
 This feature was introduced with the release 8.0 and its implementation did not change too much since
 then. From the version 9.2  a new function pg\_tablespace\_location(tablespace\_oid) offers the
 dynamic resolution of the physical tablespace location,making the dba life easier.\newline
 
 When a new physical relation is created without tablespace indication, the value defaults to the
 parameter default\_tablespace. If this parameter is not set then the relation's tablespace is set to
-the database's default tablespace. 
+the database's default tablespace.
 Into a fresh initialised cluster there are two tablespaces initially. One is the pg\_default which
 points to the path \$PGDATA/base. The second is pg\_global which is reserved for the cluster's shared
 objects and its physical path is \$PGDATA/global.\newline
@@ -552,7 +552,7 @@ pointing to the folder named /var/lib/postgresql/pg\_tbs/ts\_test. Our new table
 ts\_test.
 
 \begin{lstlisting}[style=pgsql]
-CREATE TABLESPACE ts_test 
+CREATE TABLESPACE ts_test
 OWNER postgres
 LOCATION '/var/lib/postgresql/pg_tbs/ts_test' ;
 
@@ -615,7 +615,7 @@ physical point of view.
 \index{transactions}
 PostgreSQL implements the atomicity, the consistency and the isolation with the MVCC\index{MVCC}.
 The Multi Version Concurrency Control\index{Multi Version Concurrency Control}offers high efficiency in
-the concurrent user accesss.\newline 
+the concurrent user accesss.\newline
 
 The MVCC logic is somewhat simple. When a transaction starts a write operation gets a transaction id,
 called XID,\index{XID} a 32 bit quantity. The XID value is used to determine the transaction's
@@ -659,14 +659,14 @@ committed transaction
 \end{itemize}
 
 The table \ref{tab:TRNISOLATION} shows the transaction's isolation levels and which anomalies are
-possible or not within. PostgreSQL supports the minimum isolation level to read committed. Setting the 
+possible or not within. PostgreSQL supports the minimum isolation level to read committed. Setting the
 isolation level to read uncommited does not cause an error. However, the system adjusts silently the
 level to read committed.
 
 \begin{table}[H]
   \begin{tabular}{cccc}
-    Isolation Level & Dirty Read    &    Nonrepeatable Read   &   Phantom 
-Read\\ 
+    Isolation Level & Dirty Read    &    Nonrepeatable Read   &   Phantom
+Read\\
     \hline
     Read uncommitted  &  Possible    &    Possible     &   Possible\\
     Read committed    &  Not possible &  Possible     &   Possible\\
@@ -678,8 +678,8 @@ Read\\
 
 The isolation level can be set per session with the command SET TRANSACTION ISOLATION LEVEL.
 \begin{lstlisting}[style=pgsql]
-SET TRANSACTION ISOLATION LEVEL { SERIALIZABLE | REPEATABLE READ | READ 
-COMMITTED | READ UNCOMMITTED }; 
+SET TRANSACTION ISOLATION LEVEL { SERIALIZABLE | REPEATABLE READ | READ
+COMMITTED | READ UNCOMMITTED };
 \end{lstlisting}
 
 It's also possible to change the isolation level cluster wide changing the GUC
@@ -703,13 +703,13 @@ snapshot's identifier.
 postgres=# BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 BEGIN
 postgres=# SELECT pg_export_snapshot();
- pg_export_snapshot 
+ pg_export_snapshot
 --------------------
  00001369-1
 (1 row)
 
 postgres=# SELECT count(*) FROM t_data;
- count 
+ count
 -------
    200
 (1 row)
@@ -722,7 +722,7 @@ Connectin with another backend let's remove all the rows from the table t\_data 
 postgres=# DELETE FROM t_data;
 DELETE 200
 postgres=# SELECT count(*) FROM t_data;
- count 
+ count
 -------
      0
 (1 row)
@@ -737,7 +737,7 @@ BEGIN
 postgres=# SET TRANSACTION SNAPSHOT '00001369-1';
 SET
 postgres=# SELECT count(*) FROM t_data;
- count 
+ count
 -------
    200
 (1 row)

@@ -1,41 +1,41 @@
 \chapter{Restore}
 \label{cha:RESTORE}
-There's little advantage in saving the data if the restore is not possible. In this chapter we'll take a 
+There's little advantage in saving the data if the restore is not possible. In this chapter we'll take a
 look to the fastest and possibly the safest way to restore the saved dump.\newline
 
-The program used for the restore is determined by the dump format. We'll first take a look to the restore 
-using a plain format then the custom and  the directory formats. Finally we'll the way to improve 
+The program used for the restore is determined by the dump format. We'll first take a look to the restore
+using a plain format then the custom and  the directory formats. Finally we'll the way to improve
 the restore performances with a temporary sacrifice of the cluster's reliability.
 
 \section{The plain format}
 \label{sec:PLAINFORMAT}
-As seen in \ref{cha:BACKUP} the pg\_dump's output is plain SQL. The generated script gives no choice but 
+As seen in \ref{cha:BACKUP} the pg\_dump's output is plain SQL. The generated script gives no choice but
 loading it into psql. The SQL statements are parsed and executed in sequence.\newline
 
-This format have few advantages. For example it's possible to edit the statements using a common 
-text editor. This of course if the dump is reasonably small. Even loading a file with vim when its size is 
+This format have few advantages. For example it's possible to edit the statements using a common
+text editor. This of course if the dump is reasonably small. Even loading a file with vim when its size is
 measured in gigabytes becomes a stressful experience though.\newline
 
 The data contents are saved using the COPY command. At restore time this choice have the best performance.
 
-It's possible to save the data contents using the inserts. The restore is indeed very slow because each 
+It's possible to save the data contents using the inserts. The restore is indeed very slow because each
 statement has to be parsed, planned and executed.\newline
 
-If the backup saves the schema and the data in two separate files this requires extra care at dump time if 
-there are triggers and foreign keys in the database schema. 
+If the backup saves the schema and the data in two separate files this requires extra care at dump time if
+there are triggers and foreign keys in the database schema.
 
-The data only backup should include the switch --disable-triggers which writes emit the DISABLE 
+The data only backup should include the switch --disable-triggers which writes emit the DISABLE
 TRIGGER statements before the data load and the ENABLE TRIGGER after the data is restored.\newline
 
 The following example shows a dump/reload session using the separate schema and data dump files.
 
-Let's create a new database with a simple data structure. Two tables storing a city and the address 
+Let's create a new database with a simple data structure. Two tables storing a city and the address
 and a foreign key between them enforcing the referential integrity.
 
 \begin{lstlisting}[style=pgsql]
 postgres=# CREATE DATABASE db_addr;
 CREATE DATABASE
-postgres=# \c db_addr 
+postgres=# \c db_addr
 You are now connected to database "db_addr" as user "postgres".
 db_addr=# CREATE TABLE t_address
         (
@@ -55,10 +55,10 @@ db_addr=# CREATE TABLE t_city
         )
 ;
 CREATE TABLE
-db_addr=# ALTER TABLE t_address ADD 
-	    CONSTRAINT fk_t_city_i_id_city FOREIGN KEY (i_id_city)  
-	    REFERENCES t_city(i_id_city) 
-	      ON DELETE CASCADE 
+db_addr=# ALTER TABLE t_address ADD
+	    CONSTRAINT fk_t_city_i_id_city FOREIGN KEY (i_id_city)
+	    REFERENCES t_city(i_id_city)
+	      ON DELETE CASCADE
 	      ON UPDATE RESTRICT;
 ALTER TABLE
 
@@ -68,7 +68,7 @@ Now let's put some data into the tables.
 
 \begin{lstlisting}[style=pgsql]
 INSERT INTO t_city
-	    ( 
+	    (
 	      v_city,	
 	      v_postcode
 	     )
@@ -80,13 +80,13 @@ INSERT INTO t_city
       RETURNING i_id_city
 ;
 
- i_id_city 
+ i_id_city
 -----------
          3
 (1 row)
 
 db_addr=# INSERT INTO t_address
-	    ( 
+	    (
 	      i_id_city,	
 	      t_addr
 	     )
@@ -98,7 +98,7 @@ db_addr=# INSERT INTO t_address
       RETURNING i_id_addr
 ;
 
- i_id_addr 
+ i_id_addr
 -----------
          1
 (1 row)
@@ -106,7 +106,7 @@ db_addr=# INSERT INTO t_address
 
 \end{lstlisting}
 
-We'll now execute dump the schema and the data in two separate plain files. Please note we are not using 
+We'll now execute dump the schema and the data in two separate plain files. Please note we are not using
 the --disable-triggers switch.
 
 \begin{verbatim}
@@ -115,12 +115,12 @@ postgres@tardis:~/dmp$ pg_dump --data-only db_addr > db_addr.data.sql
 
 \end{verbatim}
 
-Looking to the schema dump it's quite obvious what it does. All the DDL are saved in the correct 
+Looking to the schema dump it's quite obvious what it does. All the DDL are saved in the correct
 order to restore the same database structure .\newline
-The data is then saved by pg\_dump in the correct order for having the referential integrity 
-guaranteed. In our very simple example the table t\_city is dumped before the table t\_address. 
-This way the data will not violate the foreign key. In a complex scenario where multiple foreign keys are 
-referring the same table, the referential order is not guaranteed. Let's run the same 
+The data is then saved by pg\_dump in the correct order for having the referential integrity
+guaranteed. In our very simple example the table t\_city is dumped before the table t\_address.
+This way the data will not violate the foreign key. In a complex scenario where multiple foreign keys are
+referring the same table, the referential order is not guaranteed. Let's run the same
 dump with the option --disable-trigger.
 
 \begin{verbatim}
@@ -128,7 +128,7 @@ postgres@tardis:~/dmp$ pg_dump --disable-triggers --data-only db_addr > db_addr.
 
 \end{verbatim}
 
-The copy statements in this case are enclosed by two extra statements which disable and then re enable the 
+The copy statements in this case are enclosed by two extra statements which disable and then re enable the
 triggers.
 
 \begin{lstlisting}[style=pgsql]
@@ -136,7 +136,7 @@ triggers.
 ALTER TABLE t_address DISABLE TRIGGER ALL;
 
 COPY t_address (i_id_addr, i_id_city, t_addr) FROM stdin;
-1	3	4, malvern road 
+1	3	4, malvern road
 \.
 
 
@@ -144,7 +144,7 @@ ALTER TABLE t_address ENABLE TRIGGER ALL;
 
 \end{lstlisting}
 
-The foreign keys and all the user defined trigger will not fire during the data restore, ensuring 
+The foreign keys and all the user defined trigger will not fire during the data restore, ensuring
 the data will be safely stored and improving the speed.\newline
 
 Let's then create a new database where we'll restore the dump starting from the saved schema.
@@ -152,9 +152,9 @@ Let's then create a new database where we'll restore the dump starting from the 
 \begin{lstlisting}[style=pgsql]
 postgres=# CREATE DATABASE db_addr_restore;
 CREATE DATABASE
-postgres=# \c db_addr_restore 
+postgres=# \c db_addr_restore
 You are now connected to database "db_addr_restore" as user "postgres".
-db_addr_restore=# \i db_addr.schema.sql 
+db_addr_restore=# \i db_addr.schema.sql
 SET
 ...
 SET
@@ -179,26 +179,26 @@ REVOKE
 REVOKE
 GRANT
 GRANT
-db_addr_restore=# \i db_addr.data.sql 
+db_addr_restore=# \i db_addr.data.sql
 SET
 ...
 SET
 ALTER TABLE
 ...
 ALTER TABLE
- setval 
+ setval
 --------
       1
 (1 row)
 
- setval 
+ setval
 --------
       3
 (1 row)
 
 db_addr_restore=# \d
                    List of relations
- Schema |          Name           |   Type   |  Owner   
+ Schema |          Name           |   Type   |  Owner
 --------+-------------------------+----------+----------
  public | t_address               | table    | postgres
  public | t_address_i_id_addr_seq | sequence | postgres
@@ -212,23 +212,23 @@ db_addr_restore=# \d
 
 \section{The binary formats}
 \label{sec:PGDUMPBINFMT}
-The three binary formats supported by pg\_dump are the custom, the directory and the tar format. 
-The first two support the selective access when restoring and the parallel execution. Those features 
-make them the best choice for a flexible and reliable backup. Before the the 9.3 the only format supporting 
-the parallel restore was the custom format. The latest version extended the functionality to the directory 
-format which, combined with the parallel dump improves massively the recovery performances on big amount of 
+The three binary formats supported by pg\_dump are the custom, the directory and the tar format.
+The first two support the selective access when restoring and the parallel execution. Those features
+make them the best choice for a flexible and reliable backup. Before the the 9.3 the only format supporting
+the parallel restore was the custom format. The latest version extended the functionality to the directory
+format which, combined with the parallel dump improves massively the recovery performances on big amount of
 data. The tar format which its limitations is suitable for saving only small amount of data. \newline
 
-The custom format is a binary archive. It have a table of contents which can address the the data saved 
-inside the archive. The directory format is composed by toc.dat file where the schema is stored alongside 
-with the references to the zip files where the table's contents are saved. For each table there is a gz 
-mapped inside the toc. Each file contains  command, COPY  or inserts, for reloading the data in the 
+The custom format is a binary archive. It have a table of contents which can address the the data saved
+inside the archive. The directory format is composed by toc.dat file where the schema is stored alongside
+with the references to the zip files where the table's contents are saved. For each table there is a gz
+mapped inside the toc. Each file contains  command, COPY  or inserts, for reloading the data in the
 specific table.\newline
 
 
-The restore from the binary happens via the pg\_restore program which have almost the same switches 
+The restore from the binary happens via the pg\_restore program which have almost the same switches
 as pg\_dump's as seen in \ref{sec:PGDUMP}. This is the pg\_restore's help output.
-\newline 
+\newline
 
 \begin{verbatim}
 pg_restore restores a PostgreSQL database from an archive created by pg_dump.
@@ -284,36 +284,36 @@ Connection options:
 If no input file name is supplied, then standard input is used.
 
 Report bugs to <pgsql-bugs@postgresql.org>.
- 
+
 \end{verbatim}
 
 
-pg\_restore requires a file to process and an optional database connection. If the latter is omitted 
-the output is sent to the standard output. However, the switch -f specifies a file where to send the 
-output instead of the standard output. This is very useful if we want just check the original dump file 
+pg\_restore requires a file to process and an optional database connection. If the latter is omitted
+the output is sent to the standard output. However, the switch -f specifies a file where to send the
+output instead of the standard output. This is very useful if we want just check the original dump file
 can be read, for example, redirecting the output to /dev/null.\newline
 
-The speed of a restoring from custom or directory, using a database connection, can be massively improved 
-on  a multi core system with the -j switch which specifies the number of parallel jobs to run when 
+The speed of a restoring from custom or directory, using a database connection, can be massively improved
+on  a multi core system with the -j switch which specifies the number of parallel jobs to run when
 restoring the data and the post data section. \newline
 
-As said before PostgreSQL does not supports the multithreading. Therefore each parallel job will use just 
+As said before PostgreSQL does not supports the multithreading. Therefore each parallel job will use just
 only one cpu over a list of obects to restore determined when pg\_resotore is started.\newline
 
-The switch --section works the same way as for pg\_dump controlling the section of the archived data to 
-restore. The custom and directory format have these sections. 
+The switch --section works the same way as for pg\_dump controlling the section of the archived data to
+restore. The custom and directory format have these sections.
 \begin{itemize}
- \item \textbf{pre-data} This section contains the schema definitions without the keys, indices  and 
+ \item \textbf{pre-data} This section contains the schema definitions without the keys, indices  and
 triggers.
 \item  \textbf{data} This section contains the tables's data contents.
-\item  \textbf{post-data} This section contains the objects enforcing the data integrity alongside with the 
+\item  \textbf{post-data} This section contains the objects enforcing the data integrity alongside with the
 triggers and the indices.
 \end{itemize}
 
-The switch -C is used to create the target database before starting the restore. The connections need 
+The switch -C is used to create the target database before starting the restore. The connections need
 also a generic database to connect in order to create the database listed in the archive. \newline
 
-The following example shows the restore of the database created in \ref{sec:PLAINFORMAT} using the 
+The following example shows the restore of the database created in \ref{sec:PLAINFORMAT} using the
 custom format, using the schema and the data restore.\newline
 
 First we'll do a pg\_dump in custom format.
@@ -381,7 +381,7 @@ CREATE DATABASE
 The schema restore is done with using the following command.
 
 \begin{verbatim}
-$ pg_restore -v -s -d db_addr_restore_bin db_addr.dmp 
+$ pg_restore -v -s -d db_addr_restore_bin db_addr.dmp
 pg_restore: connecting to database for restore
 pg_restore: creating SCHEMA public
 pg_restore: creating COMMENT SCHEMA public
@@ -418,15 +418,15 @@ pg_restore: setting owner and privileges for FK CONSTRAINT fk_t_city_i_id_city
 
 \end{verbatim}
 
-The dump file is specified as last parameter. The -d switch tells pg\_restore in which database restore 
-the archive. Because we are connecting locally and with the postgres os user, there is no need to specify 
-the authentication parameters.\newline 
+The dump file is specified as last parameter. The -d switch tells pg\_restore in which database restore
+the archive. Because we are connecting locally and with the postgres os user, there is no need to specify
+the authentication parameters.\newline
 
-Then we are ready to load the data. We'll disable again the triggers in order to avoid potential data 
+Then we are ready to load the data. We'll disable again the triggers in order to avoid potential data
 load failures as seen in \ref{sec:PLAINFORMAT}.
 
 \begin{verbatim}
-$ pg_restore --disable-triggers -v -a -d db_addr_restore_bin db_addr.dmp 
+$ pg_restore --disable-triggers -v -a -d db_addr_restore_bin db_addr.dmp
 pg_restore: connecting to database for restore
 pg_restore: disabling triggers for t_address
 pg_restore: processing data for table "t_address"
@@ -440,16 +440,16 @@ pg_restore: setting owner and privileges for TABLE DATA t_address
 pg_restore: setting owner and privileges for SEQUENCE SET t_address_i_id_addr_seq
 pg_restore: setting owner and privileges for TABLE DATA t_city
 pg_restore: setting owner and privileges for SEQUENCE SET t_city_i_id_city_seq
- 
+
 \end{verbatim}
 
-The problem with this approach is the presence of the indices when loading the data which is a massive 
-bottleneck. Using the --section instead of the schema and data reload improves the restore 
+The problem with this approach is the presence of the indices when loading the data which is a massive
+bottleneck. Using the --section instead of the schema and data reload improves the restore
 performance.\newline
 
 The pre-data section will restore just the bare relations.
 \begin{verbatim}
-$ pg_restore --section=pre-data -v  -d db_addr_restore_bin db_addr.dmp 
+$ pg_restore --section=pre-data -v  -d db_addr_restore_bin db_addr.dmp
 pg_restore: connecting to database for restore
 pg_restore: creating SCHEMA public
 pg_restore: creating COMMENT SCHEMA public
@@ -477,13 +477,13 @@ pg_restore: setting owner and privileges for SEQUENCE t_city_i_id_city_seq
 pg_restore: setting owner and privileges for SEQUENCE OWNED BY t_city_i_id_city_seq
 pg_restore: setting owner and privileges for DEFAULT i_id_addr
 pg_restore: setting owner and privileges for DEFAULT i_id_city
- 
+
 \end{verbatim}
 
 The data section will then load the data contents as fast as possible.
 
 \begin{verbatim}
-$ pg_restore --section=data -v  -d db_addr_restore_bin db_addr.dmp 
+$ pg_restore --section=data -v  -d db_addr_restore_bin db_addr.dmp
 pg_restore: connecting to database for restore
 pg_restore: implied data-only restore
 pg_restore: processing data for table "t_address"
@@ -500,7 +500,7 @@ pg_restore: setting owner and privileges for SEQUENCE SET t_city_i_id_city_seq
 Finally, the post-data section will create the constraint and the indices over the existig data.
 
 \begin{verbatim}
-$ pg_restore --section=post-data -v  -d db_addr_restore_bin db_addr.dmp 
+$ pg_restore --section=post-data -v  -d db_addr_restore_bin db_addr.dmp
 pg_restore: connecting to database for restore
 pg_restore: creating CONSTRAINT pk_i_id_city
 pg_restore: creating CONSTRAINT pk_id_address
@@ -514,72 +514,72 @@ pg_restore: setting owner and privileges for FK CONSTRAINT fk_t_city_i_id_city
 
 \section{Restore performances}
 
-When the disaster happens the main goal is to get the database up and running as fast as possible. 
-Usually the data section's restore, if saved with the COPY is usually fast.\newline 
+When the disaster happens the main goal is to get the database up and running as fast as possible.
+Usually the data section's restore, if saved with the COPY is usually fast.\newline
 
-The bottleneck is the post-data section which requires CPU intensive operations with random disk access 
-operations. In large databases this section can require more time than the entire data section even 
-if the objects built by the post-data section are smaller. The parallel can improve the speed but 
+The bottleneck is the post-data section which requires CPU intensive operations with random disk access
+operations. In large databases this section can require more time than the entire data section even
+if the objects built by the post-data section are smaller. The parallel can improve the speed but
 sometimes is not enough. \newline
 
-The postgresql.conf file can be tweaked in order to improve dramatically restore's speed up to the 40\% 
-compared to production's configuration. This is possible because the restore configuration disables some 
-settings used by PostgreSQL to guarantee the durability. The emergency configuration must be swapped with 
-the production settings as soon as the restore is complete to avoid a further data loss. What follows 
-assumes the production's database is lost and restore is reading from a custom format's backup. 
+The postgresql.conf file can be tweaked in order to improve dramatically restore's speed up to the 40\%
+compared to production's configuration. This is possible because the restore configuration disables some
+settings used by PostgreSQL to guarantee the durability. The emergency configuration must be swapped with
+the production settings as soon as the restore is complete to avoid a further data loss. What follows
+assumes the production's database is lost and restore is reading from a custom format's backup.
 
 \subsection{shared\_buffers}
-When Bulk load operations like reloading a big amount of data into the database generates an high eviction 
-rate from the shared buffer without caching. Reducing the size of the shared buffer will not affect the 
-load. Therefore more memory will be available for the backends when processing the post-data section. 
-There's no fixed rule for the sizing. A gross approximation could at least 10 MB for each parallel job 
-with a minimum shared buffer's size of 512 MB.   
+When Bulk load operations like reloading a big amount of data into the database generates an high eviction
+rate from the shared buffer without caching. Reducing the size of the shared buffer will not affect the
+load. Therefore more memory will be available for the backends when processing the post-data section.
+There's no fixed rule for the sizing. A gross approximation could at least 10 MB for each parallel job
+with a minimum shared buffer's size of 512 MB.
 
 \subsection{wal\_level}
-The parameter wal\_level sets the amount of redo records to store in the WAL segments. 
-By default is the value is to minimal which is used for the standalone clusters. If the cluster feeds a 
-standby server or there is a the point in time recovery setup, the wal\_level must be at least archive 
-or hot\_standby. If there is a PITR or a standby server available for the recover stop reading this book 
-and act immediately. Restoring from a physical backup is several time faster rather a logical restore. 
-Otherwise, the standby or PITR snapshot is lost as well, before starting the reload the wal\_level must be 
+The parameter wal\_level sets the amount of redo records to store in the WAL segments.
+By default is the value is to minimal which is used for the standalone clusters. If the cluster feeds a
+standby server or there is a the point in time recovery setup, the wal\_level must be at least archive
+or hot\_standby. If there is a PITR or a standby server available for the recover stop reading this book
+and act immediately. Restoring from a physical backup is several time faster rather a logical restore.
+Otherwise, the standby or PITR snapshot is lost as well, before starting the reload the wal\_level must be
 set to minimal to reduce the WAL generation rate.
 
 \subsection{fsync}
-Turning off fsync can improve the restore's speed. Unless there is a backup battery on the disk 
+Turning off fsync can improve the restore's speed. Unless there is a backup battery on the disk
 cache, turning off this parameter in production is not safe and can lead to data loss in case of power
-failure. 
+failure.
 
 \subsection{checkpoint\_segments, checkpoint\_timeout}
-The checkpoint is a periodic event in the database activity. When occurs all the dirty pages in the 
+The checkpoint is a periodic event in the database activity. When occurs all the dirty pages in the
 shared buffer are synced to disk. This can interfere with the restore's bulk operations. Increasing the
-checkpoint segments and the checkpoint timeout to the maximum allowed will limit the unnecessary IO caused 
+checkpoint segments and the checkpoint timeout to the maximum allowed will limit the unnecessary IO caused
 by the frequent checkpoints.
 
 
 \subsection{autovacuum}
-Turning off the autovacuum will avoid to have the tables meanwhile are restored reducing the unnecessary 
-IO. 
+Turning off the autovacuum will avoid to have the tables meanwhile are restored reducing the unnecessary
+IO.
 
 
 \subsection{max\_connections}
-Reducing the max connections to the number of restore jobs plus an extra headroom of five connections will 
-limit the memory consumption caused by the unused memory slots. 
+Reducing the max connections to the number of restore jobs plus an extra headroom of five connections will
+limit the memory consumption caused by the unused memory slots.
 
 \subsection{port and listen\_addresses}
-When the database is restoring nobody except pg\_restore and the DBA should connect it. Changing the port 
-to a different value and disabling the listen addresses except the localhost is a quick and easy 
+When the database is restoring nobody except pg\_restore and the DBA should connect it. Changing the port
+to a different value and disabling the listen addresses except the localhost is a quick and easy
 solution to avoid the users messing up with the restore process.
 
 \subsection{maintenance\_work\_memory}
-This parameter affects the post-data section's speed. With low values the backends will sort the data on 
-disk slowing down the restore. Higher values will build the new indices in memory improving the speed. 
-However the value's size should be set keeping in mind how much ram is available on the system. This value 
-should be reduced by a 20\% if the total ram lesser than to 10 GB. For bigger amount of memory the 
-reduction should be the 10\%. This will leave out from the estimate the memory consumed by the operating 
-system and the other processes. From the remaining memory ram scould be removed the the shared\_buffer's 
+This parameter affects the post-data section's speed. With low values the backends will sort the data on
+disk slowing down the restore. Higher values will build the new indices in memory improving the speed.
+However the value's size should be set keeping in mind how much ram is available on the system. This value
+should be reduced by a 20\% if the total ram lesser than to 10 GB. For bigger amount of memory the
+reduction should be the 10\%. This will leave out from the estimate the memory consumed by the operating
+system and the other processes. From the remaining memory ram scould be removed the the shared\_buffer's
 memory. Finally the remaining value must be divided by the max connections.\newline
 
-Let's consider a a system with 26GB ram. If we set the shared\_buffer to 2 GB and 10 max connections, the 
+Let's consider a a system with 26GB ram. If we set the shared\_buffer to 2 GB and 10 max connections, the
 maintenance\_work\_mem will be 2.14 GB.
 
 \begin{verbatim}

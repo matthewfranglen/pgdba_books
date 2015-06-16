@@ -1,54 +1,54 @@
 \chapter{Maintenance}
 \label{cha:MAINTENANCE}\index{Maintenance}
-The database maintenance is something crucial for keeping the data access efficient. Building a proper 
+The database maintenance is something crucial for keeping the data access efficient. Building a proper
 maintenance plan is almost important like having a good disaster recovery plan.\newline
 
-As seen in \ref{sec:MVCC} the update generates new tuple's version rather updating the affected field. 
-The new tuple is stored in the next available free space in the same page or a different one. 
-Frequent updates will in move the tuples across the data pages many and many times with a trail of dead 
-tuples. Unfortunately those tuples although consuming physically space, are no longer visible for the 
-new transactions and this results in the table bloat. The indices make things more complicated. When a new 
-tuple's version is stored in a different page the index entry needs update to point the new page. The the 
-index's ordered structure makes more difficult to find free space, resulting in an higher rate of new 
+As seen in \ref{sec:MVCC} the update generates new tuple's version rather updating the affected field.
+The new tuple is stored in the next available free space in the same page or a different one.
+Frequent updates will in move the tuples across the data pages many and many times with a trail of dead
+tuples. Unfortunately those tuples although consuming physically space, are no longer visible for the
+new transactions and this results in the table bloat. The indices make things more complicated. When a new
+tuple's version is stored in a different page the index entry needs update to point the new page. The the
+index's ordered structure makes more difficult to find free space, resulting in an higher rate of new
 pages added to the relation and consequent bloat. \newline
 
 The following sections will explore the tools available for the relation's maintenance.
 
 \section{VACUUM}\index{VACUUM}
 \label{sec:VACUUM}
-VACUUM is a PostgreSQL specific command which reclaims back the dead tuple's space. When executed without a 
-target table, the command scans all the tables in the database. A regular VACUUM have some beneficial 
+VACUUM is a PostgreSQL specific command which reclaims back the dead tuple's space. When executed without a
+target table, the command scans all the tables in the database. A regular VACUUM have some beneficial
 effects.
 
 \begin{itemize}
  \item Removes the dead tuples and updates the free space map.
  \item Updates the visibility map improving the index only scans.
- \item It freezes the tuples with ageing XID preventing the XID wraparound\index{XID wraparound 
-failure} 
+ \item It freezes the tuples with ageing XID preventing the XID wraparound\index{XID wraparound
+failure}
 \end{itemize}
 
 The optional ANALYZE clause gathers the runtime statistics on processed table.\newline
 
-When run VACUUM clear the space used by the dead rows making space for the inserts and updates inside the 
-data files. The data files are not shrunk except if there is a contiguous free space in the table's 
-end. VACUUM in this case runs a truncate scan which can fail if there is a conflicting lock with the 
-database activity. The VACUUM's truncate scan works only on the table's data files. The general approach 
-for VACUUM is to have the minimum the impact on the cluster's activity. However, because the pages are 
+When run VACUUM clear the space used by the dead rows making space for the inserts and updates inside the
+data files. The data files are not shrunk except if there is a contiguous free space in the table's
+end. VACUUM in this case runs a truncate scan which can fail if there is a conflicting lock with the
+database activity. The VACUUM's truncate scan works only on the table's data files. The general approach
+for VACUUM is to have the minimum the impact on the cluster's activity. However, because the pages are
 rewritten, VACUUM can increase the I/O activity.\newline
 
-The index pages are scanned as well and the dead tuples are also cleared. The VACUUM performances on the 
-indices are influenced by the maintenance\_work\_mem setting. If the table does not have indices VACUUM 
-will run the cleanup reading the pages sequentially. If there is any index VACUUM will store in the 
-maintenance work memory  the tuple's references for the subsequent index cleanup. If the memory is 
-not sufficient to fit all the tuples then VACUUM will stop the sequential read to execute the 
+The index pages are scanned as well and the dead tuples are also cleared. The VACUUM performances on the
+indices are influenced by the maintenance\_work\_mem setting. If the table does not have indices VACUUM
+will run the cleanup reading the pages sequentially. If there is any index VACUUM will store in the
+maintenance work memory  the tuple's references for the subsequent index cleanup. If the memory is
+not sufficient to fit all the tuples then VACUUM will stop the sequential read to execute the
 partial cleanup on the indices and free the maintenance worm mem.\newline
 
-The the maintenance\_work\_mem  can impact sensibly on the VACUUM's performance on large tables. For example 
-let's build build a simple table with 10 million rows. 
+The the maintenance\_work\_mem  can impact sensibly on the VACUUM's performance on large tables. For example
+let's build build a simple table with 10 million rows.
 
 
 \begin{lstlisting}[style=pgsql]
-postgres=# CREATE TABLE t_vacuum 
+postgres=# CREATE TABLE t_vacuum
         (
                 i_id serial,
                 ts_value timestamp with time zone DEFAULT clock_timestamp(),
@@ -64,7 +64,7 @@ CREATE TABLE
 
 postgres=# INSERT INTO t_vacuum
         (t_value)
-SELECT 
+SELECT
          md5(i_cnt::text)
 FROM
 (
@@ -74,20 +74,20 @@ FROM
 ;
 INSERT 0 1000000
 
-CREATE INDEX idx_ts_value 
+CREATE INDEX idx_ts_value
         ON t_vacuum USING btree (ts_value);
 
 CREATE INDEX
 
 \end{lstlisting}
-In order to have a static environment we'll disable the table's autovacuum. We'll also increase the 
+In order to have a static environment we'll disable the table's autovacuum. We'll also increase the
 session's verbosity display what's happening during the VACUUM's run.\newline
 
 \begin{lstlisting}[style=pgsql]
-postgres=# ALTER TABLE t_vacuum 
-        SET 
+postgres=# ALTER TABLE t_vacuum
+        SET
                 (
-                        autovacuum_enabled = false, 
+                        autovacuum_enabled = false,
                         toast.autovacuum_enabled = false
                 )
 ;
@@ -98,19 +98,19 @@ ALTER TABLE
 
 \end{lstlisting}
 
-We are now executing a complete table rewrite running an UPDATE without the WHERE condition. 
+We are now executing a complete table rewrite running an UPDATE without the WHERE condition.
 This will create 10 millions of dead rows.\newline
 
 \begin{lstlisting}[style=pgsql]
-postgres=# UPDATE t_vacuum 
-        SET 
+postgres=# UPDATE t_vacuum
+        SET
                 t_value = md5(clock_timestamp()::text)
 ;
 UPDATE 1000000
 
 \end{lstlisting}
 
-Before running the VACUUM we'll change the maintenance\_work\_mem to a small value. We'll also enable the 
+Before running the VACUUM we'll change the maintenance\_work\_mem to a small value. We'll also enable the
 query timing.\newline
 
 \begin{lstlisting}[style=pgsql]
@@ -165,17 +165,17 @@ There were 0 unused item pointers.
 CPU 0.00s/0.00u sec elapsed 0.00 sec.
 VACUUM
 Time: 12377.436 ms
-postgres=# 
+postgres=#
 
 
 
 \end{lstlisting}
 
-VACUUM stores in the maintenance\_work\_mem an array of TCID pointers to the removed dead tuples. This 
-is used for the index cleanup. With a small maintenance\_work\_mem the array can consume the entire 
-memory causing VACUUM to pause the table scan for a partial index cleanup. The table scan then resumes. 
-Increasing the maintenance\_work\_mem to 2 GB\footnote{In order to have the table in the same conditions the 
-table was cleared with a VACUUM FULL and bloated with a new update.} the index scan without pauses 
+VACUUM stores in the maintenance\_work\_mem an array of TCID pointers to the removed dead tuples. This
+is used for the index cleanup. With a small maintenance\_work\_mem the array can consume the entire
+memory causing VACUUM to pause the table scan for a partial index cleanup. The table scan then resumes.
+Increasing the maintenance\_work\_mem to 2 GB\footnote{In order to have the table in the same conditions the
+table was cleared with a VACUUM FULL and bloated with a new update.} the index scan without pauses
 which improves the VACUUM's speed.\newline
 
 \begin{lstlisting}[style=pgsql]
@@ -276,7 +276,7 @@ DEBUG:  building index "pk_t_vacuum" on table "t_vacuum"
 ALTER TABLE
 Time: 1357.689 ms
 
-postgres=# CREATE INDEX idx_ts_value 
+postgres=# CREATE INDEX idx_ts_value
 postgres-#         ON t_vacuum USING btree (ts_value);
 DEBUG:  building index "idx_ts_value" on table "t_vacuum"
 CREATE INDEX
@@ -285,104 +285,104 @@ Time: 1305.911 ms
 \end{lstlisting}
 
 
-The table seen in the example begins with a size of 806 MB . After the update the table's size is doubled. 
-After the VACUUM run the table does not shrink. This is caused because there is no contiguous free space in 
-the end. The new row versions generated by the update are stored in the table's end. A second UPDATE 
-with a new VACUUM could truncate the table if all the dead rows are in the table's end. However 
+The table seen in the example begins with a size of 806 MB . After the update the table's size is doubled.
+After the VACUUM run the table does not shrink. This is caused because there is no contiguous free space in
+the end. The new row versions generated by the update are stored in the table's end. A second UPDATE
+with a new VACUUM could truncate the table if all the dead rows are in the table's end. However
 VACUUM's main goal is to keep the table's size stable, rather shrinking down the space.\newline
 
-The prevention of the XID wraparound failure managed automatically by VACUUM. When a live tuple have the 
-t\_xmin's older than the parameter vacuum\_freeze\_min\_age, then the t\_xid replaced with the 
-FrozenXID setting the tuple safely in the past. Because VACUUM by default skips the pages without dead 
-tuples some ageing tuples could be skipped by the run. The parameter vacuum\_freeze\_table\_age avoids 
+The prevention of the XID wraparound failure managed automatically by VACUUM. When a live tuple have the
+t\_xmin's older than the parameter vacuum\_freeze\_min\_age, then the t\_xid replaced with the
+FrozenXID setting the tuple safely in the past. Because VACUUM by default skips the pages without dead
+tuples some ageing tuples could be skipped by the run. The parameter vacuum\_freeze\_table\_age avoids
 this scenario triggering a full table's VACUUM when table's relfrozenxid age exceeds the value.\newline
 
-It's also possible to run VACUUM with the FREEZE \index{VACUUM FREEZE} clause. In this case VACUUM 
-will freeze all the tuples regardless of their age. The command is equivalent of running VACUUM with 
+It's also possible to run VACUUM with the FREEZE \index{VACUUM FREEZE} clause. In this case VACUUM
+will freeze all the tuples regardless of their age. The command is equivalent of running VACUUM with
 vacuum\_freeze\_min\_age set to zero.\newline
 
 VACUUM is controlled by some GUC parameters.
 
 \subsection{vacuum\_freeze\_table\_age}
-This parameter is used to start a full table VACUUM when the table's relfrozenxid exceeds the parameter's 
-value. The default setting is 150 million of transactions. Despite the possible values are between zero 
-and one billion, VACUUM will silently set the effective value to the 95\% of 
+This parameter is used to start a full table VACUUM when the table's relfrozenxid exceeds the parameter's
+value. The default setting is 150 million of transactions. Despite the possible values are between zero
+and one billion, VACUUM will silently set the effective value to the 95\% of
 the autovacuum\_freeze\_max\_age, reducing the possibility to have an anti-wraparound autovacuum.
 
 \subsection{vacuum\_freeze\_min\_age}
-The parameter sets minimum age for the tuple's t\_xmin to be frozen. The default is 50 million 
-transactions. The values accepted are between zero to one billion. However VACUUM will change silently the 
-effective value to one half of autovacuum\_freeze\_max\_age in order to maximise the time between the 
+The parameter sets minimum age for the tuple's t\_xmin to be frozen. The default is 50 million
+transactions. The values accepted are between zero to one billion. However VACUUM will change silently the
+effective value to one half of autovacuum\_freeze\_max\_age in order to maximise the time between the
 forced autovacuum.
 
 \subsection{vacuum\_multixact\_freeze\_table\_age}
-From PostgreSQL 9.3 VACUUM maintains the multixact ID as well. This identifier is used to store the 
-row locks in the tuple's header.  Because the multixact ID\index{multixact ID} is a 32 bit quantity there 
-is the same XID's issue with the wraparound failure\index{multixact ID, wraparound failure}. This parameter 
-sets the value after that a table scan is performed. The setting is checked against the field relminmxid of 
-the pg\_class. The default is 150 million of multixacts. The accepted values are between zero and one 
-billion. VACUUM limits the effective value to the 95\% of autovacuum\_multixact\_freeze\_max\_age. This wat 
+From PostgreSQL 9.3 VACUUM maintains the multixact ID as well. This identifier is used to store the
+row locks in the tuple's header.  Because the multixact ID\index{multixact ID} is a 32 bit quantity there
+is the same XID's issue with the wraparound failure\index{multixact ID, wraparound failure}. This parameter
+sets the value after that a table scan is performed. The setting is checked against the field relminmxid of
+the pg\_class. The default is 150 million of multixacts. The accepted values are between zero and one
+billion. VACUUM limits the effective value to the 95\% of autovacuum\_multixact\_freeze\_max\_age. This wat
 the manual VACUUM has a chance to run before an anti-wraparound autovacuum.
 
 \subsection{vacuum\_multixact\_freeze\_min\_age}
-Sets the minimum age in multixacts for VACUUM to replace the multixact IDs with a newer transaction ID or 
-multixact ID, while scanning a table. The default is 5 million multixacts. The accepted values 
-are between zero and one billion. VACUUM will silently limit the effective value to one half of 
+Sets the minimum age in multixacts for VACUUM to replace the multixact IDs with a newer transaction ID or
+multixact ID, while scanning a table. The default is 5 million multixacts. The accepted values
+are between zero and one billion. VACUUM will silently limit the effective value to one half of
 autovacuum\_multixact\_freeze\_max\_age, in order to increase the time between the forced autovacuums.
 
 \subsection{vacuum\_defer\_cleanup\_age}
-This parameter have effect only on the master in the hot standby configurations. When set to a positive  
-value on the master, can reduce the risk of query conflicts on the standby. Does not have effect on a 
+This parameter have effect only on the master in the hot standby configurations. When set to a positive
+value on the master, can reduce the risk of query conflicts on the standby. Does not have effect on a
 standby server.
 
 \subsection{vacuum\_cost\_delay}\label{sub:VACUUMCOST}
-This parameter, if set to a not zero value enables the cost based vacuum delay\index{VACUUM, cost 
-based delay} and sets the sleep time, in milliseconds, for VACUUM process when the cost limit exceeds. The 
-default value is zero, which disables the cost-based vacuum delay feature. 
+This parameter, if set to a not zero value enables the cost based vacuum delay\index{VACUUM, cost
+based delay} and sets the sleep time, in milliseconds, for VACUUM process when the cost limit exceeds. The
+default value is zero, which disables the cost-based vacuum delay feature.
 
 \subsection{vacuum\_cost\_limit}
-This parameter sets the arbitrary cost limit. VACUUM sleeps for the time set in vacuum\_cost\_delay when 
-the value is reached. The default value is 200. 
+This parameter sets the arbitrary cost limit. VACUUM sleeps for the time set in vacuum\_cost\_delay when
+the value is reached. The default value is 200.
 
 \subsection{vacuum\_cost\_page\_hit}
-The parameter sets the arbitrary cost for vacuuming one buffer found in the shared buffer cache. It 
-represents the cost to lock the buffer, look up to the shared hash table and scan the content of the page. 
+The parameter sets the arbitrary cost for vacuuming one buffer found in the shared buffer cache. It
+represents the cost to lock the buffer, look up to the shared hash table and scan the content of the page.
 The default value is one.
 
 \subsection{vacuum\_cost\_page\_miss}
-This parameter sets the arbitrary cost for vacuuming a buffer not present in the shared buffer. This 
-represents the effort to lock the buffer pool, lookup the shared hash table, read the desired block 
+This parameter sets the arbitrary cost for vacuuming a buffer not present in the shared buffer. This
+represents the effort to lock the buffer pool, lookup the shared hash table, read the desired block
 from the disk and scan its content. The default value is 10.
 
 \subsection{vacuum\_cost\_page\_dirty}
-This parameter sets the arbitrary cost charged when vacuum scans a previously dirty page\footnote{A 
-page is dirty when its modifications are not yet written on the relation's data file}. It represents the 
+This parameter sets the arbitrary cost charged when vacuum scans a previously dirty page\footnote{A
+page is dirty when its modifications are not yet written on the relation's data file}. It represents the
 extra I/O required to flush the dirty block out to disk. The default value is 20.
 
 \section{ANALYZE}
 \label{sec:ANALYZE}
-The PostgreSQL's query optimiser builds the query execution plan using the cost estimates from the 
-internal runtime statistics. Each step in the execution plan gets an arbitrary cost used to compute the 
-plan total cost. The execution plan which estimated cost is lesser is then sent to the query executor. 
+The PostgreSQL's query optimiser builds the query execution plan using the cost estimates from the
+internal runtime statistics. Each step in the execution plan gets an arbitrary cost used to compute the
+plan total cost. The execution plan which estimated cost is lesser is then sent to the query executor.
 Keeping the runtime statistics up to date helps the cluster to build efficient plans.\newline
 
-The command ANALYZE\index{ANALYZE} gathers the relation's runtime statistics. When executed reads the 
-data, builds up the statistics and stores them into the pg\_statistics\index{pg\_statistics, 
-table} system table. The command accepts the optional clause VERBOSE to increase verbosity alongside the 
-optional target table and the eventual column list. If ANALYZE is launched with no parameters scans all the 
-tables in the database. Specifying the table name will cause ANALYZE to process all the table's 
+The command ANALYZE\index{ANALYZE} gathers the relation's runtime statistics. When executed reads the
+data, builds up the statistics and stores them into the pg\_statistics\index{pg\_statistics,
+table} system table. The command accepts the optional clause VERBOSE to increase verbosity alongside the
+optional target table and the eventual column list. If ANALYZE is launched with no parameters scans all the
+tables in the database. Specifying the table name will cause ANALYZE to process all the table's
 columns.\newline
 
-When working on large tables ANALYZE runs a sample read on the table.  The GUC parameter 
-default\_statistics\_target determines the amount of entries read by the sample. The 
-default limit is 100. Increasing the value will cause the planner to get better estimates, in particular 
-for the columns with the data distributed irregularly. This accuracy have a cost. Will cause ANALYZE to 
-spend a longer time for the statistics gathering and building plus an bigger space required 
+When working on large tables ANALYZE runs a sample read on the table.  The GUC parameter
+default\_statistics\_target determines the amount of entries read by the sample. The
+default limit is 100. Increasing the value will cause the planner to get better estimates, in particular
+for the columns with the data distributed irregularly. This accuracy have a cost. Will cause ANALYZE to
+spend a longer time for the statistics gathering and building plus an bigger space required
 in pg\_statistics.\newline
 
 
-The following example will show how default\_statistics\_target can affects the estimates. We'll re use 
-the table created in \ref{sec:VACUUM}. This is the result of ANALYZE VERBOSE with the default 
+The following example will show how default\_statistics\_target can affects the estimates. We'll re use
+the table created in \ref{sec:VACUUM}. This is the result of ANALYZE VERBOSE with the default
 statistic target.
 
 \begin{lstlisting}[style=pgsql]
@@ -390,12 +390,12 @@ postgres=# SET default_statistics_target =100;
 SET
 postgres=# ANALYZE VERBOSE t_vacuum;
 INFO:  analyzing "public.t_vacuum"
-INFO:  "t_vacuum": scanned 30000 of 103093 pages, containing 2909979 live rows and 0 dead rows; 
+INFO:  "t_vacuum": scanned 30000 of 103093 pages, containing 2909979 live rows and 0 dead rows;
 30000 rows in sample, 9999985 estimated total rows
 ANALYZE
 \end{lstlisting}
 
-The table have 10 million rows but ANALYZE estimates the contents in just 2,909,979 rows, the 30\% of 
+The table have 10 million rows but ANALYZE estimates the contents in just 2,909,979 rows, the 30\% of
 the effective live tuples.\newline
 
 Now we'll run ANALYZE with default\_statistics\_target set to its maximum allowed value, 10000.
@@ -405,22 +405,22 @@ Now we'll run ANALYZE with default\_statistics\_target set to its maximum allowe
 SET
 postgres=# ANALYZE VERBOSE t_vacuum;
 INFO:  analyzing "public.t_vacuum"
-INFO:  "t_vacuum": scanned 103093 of 103093 pages, containing 10000000 live rows and 0 dead rows; 
+INFO:  "t_vacuum": scanned 103093 of 103093 pages, containing 10000000 live rows and 0 dead rows;
 3000000 rows in sample, 10000000 estimated total rows
 ANALYZE
 \end{lstlisting}
 
 This time the table's live tuples are estimated correctly in 10 millions.\newline
 
-The table pg\_statistics is not intended for human reading. The statistics are translated in human 
+The table pg\_statistics is not intended for human reading. The statistics are translated in human
 readable format by the view pg\_stats\index{pg\_stats, view}.\newline
 
-The rule of thumb when dealing with poorly performing queries, is to check if statistics are recent 
-and accurate. The information is stored into the view pg\_stat\_all\_tables \footnote{The subset views 
-pg\_stat\_user\_tables and pg\_stat\_sys\_tables are useful to search respectively the current user and the 
+The rule of thumb when dealing with poorly performing queries, is to check if statistics are recent
+and accurate. The information is stored into the view pg\_stat\_all\_tables \footnote{The subset views
+pg\_stat\_user\_tables and pg\_stat\_sys\_tables are useful to search respectively the current user and the
 system tables only.}.
 
-For example this query gets, for a certain table,  the last execution of the manual and the auto vacuum 
+For example this query gets, for a certain table,  the last execution of the manual and the auto vacuum
 alongside with the last analyze and auto analyze.
 
 \begin{lstlisting}[style=pgsql]
@@ -442,12 +442,12 @@ WHERE
 -[ RECORD 1 ]----+------------------------------
 schemaname       | public
 relname          | t_vacuum
-last_vacuum      | 
-last_autovacuum  | 
+last_vacuum      |
+last_autovacuum  |
 last_analyze     | 2014-06-17 18:48:56.359709+00
-last_autoanalyze | 
+last_autoanalyze |
 
-postgres=# 
+postgres=#
 
 
 
@@ -460,48 +460,48 @@ The statistics target is a per column setting allowing a fine grained tuning for
 
 
 --SET THE STATISTICS TO 1000 ON THE COLUMN i_id
-ALTER TABLE t_vacuum 
-        ALTER COLUMN  i_id 
+ALTER TABLE t_vacuum
+        ALTER COLUMN  i_id
                         SET STATISTICS 1000
 ;
 
 \end{lstlisting}
 
-The default statistic target can be changed for the current session only using the SET command. The cluster 
+The default statistic target can be changed for the current session only using the SET command. The cluster
 wide value is changed using the parameter in the postgresql.conf file.
 
 \section{REINDEX}\label{sec:REINDEX}
-The general purpose B-tree index stores the indexed value alongside with the pointer to the 
-tuple's heap page. The index pages are organised in the form of a balanced tree linking each other 
+The general purpose B-tree index stores the indexed value alongside with the pointer to the
+tuple's heap page. The index pages are organised in the form of a balanced tree linking each other
 using page's special space seen in \ref{fig:INDEX01}. As long as the heap tuple remains in the same page
-the index entry doesn't need update. The HOT strategy\index{HOT strategy} tries to achieve this goal keeping 
-the heap tuples in the same page. When a new tuple version is stored in the heap page then also the index 
-entry needs to reflect the change. By default the index pages have a percentage of space reserved for 
-the updates. This is an hardcoded 30\% for the not leaf pages and a 10\% for the leaf 
+the index entry doesn't need update. The HOT strategy\index{HOT strategy} tries to achieve this goal keeping
+the heap tuples in the same page. When a new tuple version is stored in the heap page then also the index
+entry needs to reflect the change. By default the index pages have a percentage of space reserved for
+the updates. This is an hardcoded 30\% for the not leaf pages and a 10\% for the leaf
 pages. The latter can be changed adjusting the index's fillfactor.\newline
 
-VACUUM efficiency is worse with the indices because their ordered nature. Even converting the dead 
-tuples to free space, this is reusable only if the new entry is compatible with the B-tree position. 
-The empty pages can be recycled but this requires at least two VACUUM runs. When an index page is empty 
-then is marked as deleted by VACUUM but not immediately recycled. The page is first stamped with the next 
-XID and therefore becomes invisible. Only a second VACUUM will clear the deleted pages returning the 
-free space to the relation. This behaviour is made on purpose, because there might be running 
-scans which still need to access the page. The second VACUUM is the safest way to recycle the page only 
+VACUUM efficiency is worse with the indices because their ordered nature. Even converting the dead
+tuples to free space, this is reusable only if the new entry is compatible with the B-tree position.
+The empty pages can be recycled but this requires at least two VACUUM runs. When an index page is empty
+then is marked as deleted by VACUUM but not immediately recycled. The page is first stamped with the next
+XID and therefore becomes invisible. Only a second VACUUM will clear the deleted pages returning the
+free space to the relation. This behaviour is made on purpose, because there might be running
+scans which still need to access the page. The second VACUUM is the safest way to recycle the page only
 if no longer required.\newline
 
-Therefore the indices are affected by the data bloat more than the tables. Alongside with a bigger disk 
-space allocation, the bloat results generally in bad index's performances. The periodical reindex 
+Therefore the indices are affected by the data bloat more than the tables. Alongside with a bigger disk
+space allocation, the bloat results generally in bad index's performances. The periodical reindex
 is the best way to keep the indices in good shape.\newline
 
-Unlike the VACUUM, the REINDEX have a noticeable impact on the cluster's activity. To ensure the data is 
-consistently read the REINDEX sets a lock on the table preventing the table's writes. The reads are also 
+Unlike the VACUUM, the REINDEX have a noticeable impact on the cluster's activity. To ensure the data is
+consistently read the REINDEX sets a lock on the table preventing the table's writes. The reads are also
 blocked for the queries which are using the index.\newline
 
-A B-tree index build requires a the data to be sorted. PostgreSQL comes with a handy GUC parameter to track 
+A B-tree index build requires a the data to be sorted. PostgreSQL comes with a handy GUC parameter to track
 the sort, the trace\_sort\index{trace\_sort} which requires a verbosity set to DEBUG.
 
-The following example is the output of the primary key's reindex of the test table created in 
-\ref{sec:VACUUM}. 
+The following example is the output of the primary key's reindex of the test table created in
+\ref{sec:VACUUM}.
 
 
 \begin{lstlisting}[style=pgsql]
@@ -528,11 +528,11 @@ Time: 11876.807 ms
 
 \end{lstlisting}
 
-The reindex performs a data sort but maintenance\_work\_mem does not fit the table's data. PostgreSQL 
-then starts a disk sort in order to build up the index. The way PostgreSQL determines whether sort 
-on disk or in memory should use follow this simple rule. If after the table scan the maintenance work 
-memory is exhausted then will be used a sort on disk. That's the reason why increasing the 
-maintenance\_work\_mem  can improve the reindex. Determining the correct value for this parameter is 
+The reindex performs a data sort but maintenance\_work\_mem does not fit the table's data. PostgreSQL
+then starts a disk sort in order to build up the index. The way PostgreSQL determines whether sort
+on disk or in memory should use follow this simple rule. If after the table scan the maintenance work
+memory is exhausted then will be used a sort on disk. That's the reason why increasing the
+maintenance\_work\_mem  can improve the reindex. Determining the correct value for this parameter is
 quite tricky.\newline
 This is the reindex using 1 GB for the maintenance\_work\_mem.
 
@@ -556,21 +556,21 @@ Time: 6964.196 ms
 
 \end{lstlisting}
 
-After the sort the reindex creates a new index file from the sorted data which is changed in the system 
-catalogue's pg\_class.relfilenode. When the reindex's transaction commits the old file node is deleted. The 
-sequence can be emulated creating a new index with a different name. The old index can be dropped safely 
-and the new one renamed to the old's name. This approach have the advantage of not blocking the 
+After the sort the reindex creates a new index file from the sorted data which is changed in the system
+catalogue's pg\_class.relfilenode. When the reindex's transaction commits the old file node is deleted. The
+sequence can be emulated creating a new index with a different name. The old index can be dropped safely
+and the new one renamed to the old's name. This approach have the advantage of not blocking the
 table's reads using the old index.\newline
 
 \begin{lstlisting}[style=pgsql]
 
-postgres=# CREATE INDEX idx_ts_value_new 
+postgres=# CREATE INDEX idx_ts_value_new
                 ON t_vacuum USING btree (ts_value);
 CREATE INDEX
 
 postgres=# DROP INDEX idx_ts_value;
 DROP INDEX
-postgres=# ALTER INDEX idx_ts_value_new 
+postgres=# ALTER INDEX idx_ts_value_new
                 RENAME TO idx_ts_value;
 ALTER INDEX
 
@@ -578,46 +578,46 @@ ALTER INDEX
 
 
 
-From the version 8.2 PostgreSQL supports the CREATE INDEX CONCURRENTLY statement\index{CREATE INDEX 
-CONCURRENTLY} which doesn't block the cluster's activity. With this method  the index creation 
-adds a new invalid index in the system catalogue then starts a table scan to build the dirty index. A 
-second table scan is then executed to fix the invalid index entries and, after a final validation 
+From the version 8.2 PostgreSQL supports the CREATE INDEX CONCURRENTLY statement\index{CREATE INDEX
+CONCURRENTLY} which doesn't block the cluster's activity. With this method  the index creation
+adds a new invalid index in the system catalogue then starts a table scan to build the dirty index. A
+second table scan is then executed to fix the invalid index entries and, after a final validation
 the index becomes valid. \newline
 
 The concurrent index build have indeed some caveats and limitations.
 \begin{itemize}
  \item Any problem with the table scan will fail the command and leaving an invalid index in place.
 This relation is not used for the reads but adds an extra overhead to the inserts and updates.
-\item When building an unique index concurrently this start enforcing the uniqueness when the 
-second table scan starts. Some transactions could then start reporting the uniqueness violation 
+\item When building an unique index concurrently this start enforcing the uniqueness when the
+second table scan starts. Some transactions could then start reporting the uniqueness violation
 before the index becoming available. In the case the build fails on the second table scan the invalid
 index will enforce the uniqueness regardless of its status.
 \item Regular index builds can run in parallel on the same table. Concurrent index builds cannot.
 \item Concurrent index builds cannot run within a transaction block.
 \end{itemize}
 
-The primary keys and unique constraints can be swapped like the indices using a different 
-approach. PostgreSQL since the version 9.1 supports the \textit{ALTER TABLE table\_name 
-ADD table\_constraint using\_index} statement. Combining a DROP CONSTRAINT with this command is possible 
+The primary keys and unique constraints can be swapped like the indices using a different
+approach. PostgreSQL since the version 9.1 supports the \textit{ALTER TABLE table\_name
+ADD table\_constraint using\_index} statement. Combining a DROP CONSTRAINT with this command is possible
 to swap the constraint's index without losing the uniqueness enforcement.
 
 \begin{lstlisting}[style=pgsql]
-postgres=# CREATE UNIQUE INDEX pk_t_vacuum_new 
+postgres=# CREATE UNIQUE INDEX pk_t_vacuum_new
                 ON  t_vacuum USING BTREE (i_id);
 CREATE INDEX
 postgres=# ALTER TABLE t_vacuum
                 DROP CONSTRAINT pk_t_vacuum,
-                ADD CONSTRAINT pk_t_vacuum_new PRIMARY KEY  
+                ADD CONSTRAINT pk_t_vacuum_new PRIMARY KEY
                         USING INDEX pk_t_vacuum_new
            ;
 ALTER TABLE
-postgres=# ALTER INDEX pk_t_vacuum_new 
+postgres=# ALTER INDEX pk_t_vacuum_new
                 RENAME TO pk_t_vacuum;
 ALTER INDEX
 
 \end{lstlisting}
 
-The example uses a regular index build and then blocks the writes. It's also possible to 
+The example uses a regular index build and then blocks the writes. It's also possible to
 build the new index concurrently.
 
 This method cannot be used though if any foreign key references the local key.
@@ -631,11 +631,11 @@ This method cannot be used though if any foreign key references the local key.
                                         )
             ;
 CREATE TABLE
-postgres=# ALTER TABLE t_vac_foreign 
+postgres=# ALTER TABLE t_vac_foreign
                 ADD CONSTRAINT fk_t_vac_foreign_t_vacuum_i_id
-                        FOREIGN KEY (i_id) 
-                        REFERENCES t_vacuum (i_id) 
-                        ON DELETE CASCADE 
+                        FOREIGN KEY (i_id)
+                        REFERENCES t_vacuum (i_id)
+                        ON DELETE CASCADE
                         ON UPDATE RESTRICT;
 ALTER TABLE
 
@@ -645,22 +645,22 @@ postgres=# ALTER TABLE t_vacuum
 postgres-# DROP CONSTRAINT pk_t_vacuum,
 postgres-# ADD CONSTRAINT pk_t_vacuum_new PRIMARY KEY  USING INDEX pk_t_vacuum_new;
 ERROR:  cannot drop constraint pk_t_vacuum on table t_vacuum because other objects depend on it
-DETAIL:  constraint fk_t_vac_foreign_t_vacuum_i_id on table t_vac_foreign depends on index 
+DETAIL:  constraint fk_t_vac_foreign_t_vacuum_i_id on table t_vac_foreign depends on index
 pk_t_vacuum
 HINT:  Use DROP ... CASCADE to drop the dependent objects too.
 
 
 \end{lstlisting}
 
-In this case the safest way to proceed is to run a conventional REINDEX. 
+In this case the safest way to proceed is to run a conventional REINDEX.
 
 
 \section{VACUUM FULL and CLUSTER}\index{VACUUM FULL}\index{CLUSTER}
 \label{sec:VACFULL}
 PostgreSQL ships with two commands used to shrink the data files.\newline
 
-The command CLUSTER can be quite confusing. It's purpose is to rebuild a completely new table with 
-the tuples with same order of the clustered index which is set using  the  command 
+The command CLUSTER can be quite confusing. It's purpose is to rebuild a completely new table with
+the tuples with same order of the clustered index which is set using  the  command
 \textit{ALTER TABLE table\_name CLUSTER ON index\_name}.\newline
 
 For example, this is the verbose output of the cluster command for the table created in \ref{sec:VACUUM}.
@@ -712,103 +712,103 @@ DEBUG:  drop auto-cascades to toast table pg_toast.pg_toast_51949
 DEBUG:  drop auto-cascades to index pg_toast.pg_toast_51949_index
 DEBUG:  drop auto-cascades to type pg_toast.pg_toast_51949
 CLUSTER
-postgres=# 
+postgres=#
 
 \end{lstlisting}
 
-CLUSTER have different strategies to order the data. In this example the chosen strategy is the sequential 
-scan and sort strategy. The tuples are stored into a new file node which is assigned to the 
-relation's relfilenode. Before completing the operation the indices are reindexed. When the CLUSTER is done 
-the old file node is removed from the disk. The process is quite invasive though. Because the 
-relation is literally rebuilt from scratch it requires an exclusive access lock which blocks the reads and 
-the writes. The storage is another critical point. There should be enough to keep old relation's data 
+CLUSTER have different strategies to order the data. In this example the chosen strategy is the sequential
+scan and sort strategy. The tuples are stored into a new file node which is assigned to the
+relation's relfilenode. Before completing the operation the indices are reindexed. When the CLUSTER is done
+the old file node is removed from the disk. The process is quite invasive though. Because the
+relation is literally rebuilt from scratch it requires an exclusive access lock which blocks the reads and
+the writes. The storage is another critical point. There should be enough to keep old relation's data
 files, with the new files plus the indices and the eventual sort on disk.\newline
 
-Taking a look to source code in \textbf{src/backend/commands/cluster.c}, show us how CLUSTER and VACUUM 
+Taking a look to source code in \textbf{src/backend/commands/cluster.c}, show us how CLUSTER and VACUUM
 FULL do the same job with a slight difference. VACUUM FULL does not sort the new relation's data..\newline
 
-VACUUM FULL and CLUSTER have some beneficial effects on the disk storage as the space is returned to the 
+VACUUM FULL and CLUSTER have some beneficial effects on the disk storage as the space is returned to the
 operating system and improve the indices performance because the implicit reindex.\newline
 
-The blocking nature of those commands have an unavoidable impact on the cluster's activity. Unlike the 
-conventional VACUUM, CLUSTER and VACUUM FULL should run when the cluster is not in use or in a maintenance 
+The blocking nature of those commands have an unavoidable impact on the cluster's activity. Unlike the
+conventional VACUUM, CLUSTER and VACUUM FULL should run when the cluster is not in use or in a maintenance
 window. CLUSTER and VACUUM FULL do not fix the XID wraparound failure.\newline
 
-As rule of thumb, in order to minimise the database's downtime, CLUSTER and VACUUM FULL should be used only 
+As rule of thumb, in order to minimise the database's downtime, CLUSTER and VACUUM FULL should be used only
 for the extraordinary maintenance and only if the disk space is critical.
- 
+
 
 
 \section{The autovacuum}\index{AUTOVACUUM}
 \label{sec:AUTOVACUUM}
-The autovacuum daemon was introduced in the revolutionary PostgreSQL 8.0. From the version 8.3 was enabled 
-by default because reliable and efficient. With autovacuum turned on the maintenance and the statistic 
-gathering is done automatically by the cluster. Turning off autovacuum it doesn't disable completely the 
-daemon. Actually the workers are started automatically to prevent the XID and multixact ID wraparound 
-failure, regardless of the setting. In order to have autovacuum working the statistic collector must be 
+The autovacuum daemon was introduced in the revolutionary PostgreSQL 8.0. From the version 8.3 was enabled
+by default because reliable and efficient. With autovacuum turned on the maintenance and the statistic
+gathering is done automatically by the cluster. Turning off autovacuum it doesn't disable completely the
+daemon. Actually the workers are started automatically to prevent the XID and multixact ID wraparound
+failure, regardless of the setting. In order to have autovacuum working the statistic collector must be
 enabled with track\_counts= 'on'.\newline
 
 The following parameters control the autovacuum behaviour.
 
-\subsection{autovacuum} 
-This parameter is used to enable or disable the autovacuum daemon. Changing the setting requires 
-the cluster's restart. 
+\subsection{autovacuum}
+This parameter is used to enable or disable the autovacuum daemon. Changing the setting requires
+the cluster's restart.
 
-\subsection{autovacuum\_max\_workers} 
-The parameter sets the maximum number of autovacuum subprocesses. Changing the setting requires the 
+\subsection{autovacuum\_max\_workers}
+The parameter sets the maximum number of autovacuum subprocesses. Changing the setting requires the
 cluster's restart. Each subprocess consumes one PostgreSQL connection.
 
-\subsection{autovacuum\_naptime} 
-The parameter sets the delay between two autovacuum runs on a specified database.The delay is 
+\subsection{autovacuum\_naptime}
+The parameter sets the delay between two autovacuum runs on a specified database.The delay is
 measured in seconds and the default value is 1 minute.
 
 \subsection{autovacuum\_vacuum\_scale\_factor}
-The parameter one specifies the fraction of the relation's live tuples to add to the set in value in 
-autovacuum\_vacuum\_threshold in order to determine whether start the automatic VACUUM. The default is 0.2, 
-which is the table's 20\%. This setting can be overridden for individual tables by changing the storage 
+The parameter one specifies the fraction of the relation's live tuples to add to the set in value in
+autovacuum\_vacuum\_threshold in order to determine whether start the automatic VACUUM. The default is 0.2,
+which is the table's 20\%. This setting can be overridden for individual tables by changing the storage
 parameters.
 
 \subsection{autovacuum\_vacuum\_threshold}
-This parameter sets the extra threshold of updated or deleted tuples to add to the value determined 
-from autovacuum\_vacuum\_scale\_factor. The value is used to trigger an automatic VACUUM. The default is 50 
-tuples. This setting can be overridden for individual tables by changing the storage parameters. For 
-example a table with 10 million rows and autovacuum\_vacuum\_threshold, autovacuum\_vacuum\_scale\_factor 
-set both to their default values, the autovacuum will start after when 2,000,050 tuples are updated or 
+This parameter sets the extra threshold of updated or deleted tuples to add to the value determined
+from autovacuum\_vacuum\_scale\_factor. The value is used to trigger an automatic VACUUM. The default is 50
+tuples. This setting can be overridden for individual tables by changing the storage parameters. For
+example a table with 10 million rows and autovacuum\_vacuum\_threshold, autovacuum\_vacuum\_scale\_factor
+set both to their default values, the autovacuum will start after when 2,000,050 tuples are updated or
 deleted.
 
 \subsection{autovacuum\_analyze\_scale\_factor}
-The parameter specifies the fraction of table to add to autovacuum\_analyze\_threshold in order to determine 
-whether start the automatic ANALYZE. The default is 0.1, which is the table's 10\%. This setting can be 
+The parameter specifies the fraction of table to add to autovacuum\_analyze\_threshold in order to determine
+whether start the automatic ANALYZE. The default is 0.1, which is the table's 10\%. This setting can be
 overridden for individual tables by changing storage parameters.
 
 \subsection{autovacuum\_analyze\_threshold}
-This parameter sets the extra threshold of updated or deleted tuples to add to the value determined from 
-autovacuum\_analyze\_scale\_factor. The value is used to  trigger an automatic ANALYZE. The default is 50 
-tuples. This setting can be overridden for individual tables by changing the storage parameters. For 
-example a 
-table with 10 million rows and autovacuum\_analyze\_scale\_factor, autovacuum\_analyze\_threshold set both 
+This parameter sets the extra threshold of updated or deleted tuples to add to the value determined from
+autovacuum\_analyze\_scale\_factor. The value is used to  trigger an automatic ANALYZE. The default is 50
+tuples. This setting can be overridden for individual tables by changing the storage parameters. For
+example a
+table with 10 million rows and autovacuum\_analyze\_scale\_factor, autovacuum\_analyze\_threshold set both
 to their default values will start an automatic ANALYZE when 1,000,050 tuples are updated or deleted.
 
 \subsection{autovacuum\_freeze\_max\_age}
-The parameter sets the maximum age for the pg\_class's relfrozenxid. When the value is exceeded then an 
-automatic VACUUM is forced on the relation to prevent the XID wraparound. The process will start 
-even if the autovacuum is turned off. The parameter can be set only at server's start but is possible to 
+The parameter sets the maximum age for the pg\_class's relfrozenxid. When the value is exceeded then an
+automatic VACUUM is forced on the relation to prevent the XID wraparound. The process will start
+even if the autovacuum is turned off. The parameter can be set only at server's start but is possible to
 set the value per table by changing the storage parameters.
 
 \subsection{autovacuum\_multixact\_freeze\_max\_age}
-The parameter sets the maximum age of the table's pg\_class's relminmxid. When the value is exceeded then 
-an automatic VACUUM is forced on the relation to prevent the  multixact ID wraparound. The process will 
-start even if the autovacuum is turned off. The parameter can be set only at server's start but is possible 
+The parameter sets the maximum age of the table's pg\_class's relminmxid. When the value is exceeded then
+an automatic VACUUM is forced on the relation to prevent the  multixact ID wraparound. The process will
+start even if the autovacuum is turned off. The parameter can be set only at server's start but is possible
 to set the value per table by changing the storage parameters.
 
 \subsection{autovacuum\_vacuum\_cost\_delay}
-The parameter sets the cost delay to use in the automatic VACUUM operations. If set to -1, the regular 
-vacuum\_cost\_delay value will be used. The default value is 20 milliseconds. 
+The parameter sets the cost delay to use in the automatic VACUUM operations. If set to -1, the regular
+vacuum\_cost\_delay value will be used. The default value is 20 milliseconds.
 
 \subsection{autovacuum\_vacuum\_cost\_limit}
-The parameter sets  cost limit value to be used in the automatic VACUUM operations. If set to -1 then the 
-regular vacuum\_cost\_limit value will be used. The default value is -1. The value is distributed among the 
-running autovacuum workers. The sum of the limits of each worker never exceeds this variable. More 
+The parameter sets  cost limit value to be used in the automatic VACUUM operations. If set to -1 then the
+regular vacuum\_cost\_limit value will be used. The default value is -1. The value is distributed among the
+running autovacuum workers. The sum of the limits of each worker never exceeds this variable. More
 information on cost based vacuum here \ref{sub:VACUUMCOST}.
 
 

@@ -1,8 +1,8 @@
 \chapter{Database installation}
 \label{cha:DB_INSTALL}
-In this chapter we will see how to install PostgreSQL on Debian Gnu Linux. We'll take a look at 
-two procedures, compiling from source and using the packages shipped by the pgdg 
-\index{pgdg apt repository} apt repository.\newline 
+In this chapter we will see how to install PostgreSQL on Debian Gnu Linux. We'll take a look at
+two procedures, compiling from source and using the packages shipped by the pgdg
+\index{pgdg apt repository} apt repository.\newline
 There are advantages and disadvantages to both procedures. Compiling from source offers fine
 grained control of all the aspects of the binaries configuration. It also doesn't have the risks of
 unwanted restarts when upgrading and it's possible to install and upgrade the binaries without administrator privileges.\newline
@@ -21,13 +21,13 @@ appeared after five months.\newline
 Using the configure script with the default settings requires the root access when installing.
 That's because the permissions of the target location /usr/local don't allow writing by normal
 users. This method adopts a different install location and requires the root access only for the os
-user creation and the installation of the dependencies. 
+user creation and the installation of the dependencies.
 Before starting the PostgreSQL part ask your sysadmin to run the following commands.
 
 \begin{itemize}
 
  \item useradd -d /home/postgres -s /bin/bash -m -U postgres
- \item passwd postgres 
+ \item passwd postgres
  \item apt-get update
  \item apt-get install build-essential  libreadline6-dev  zlib1g-dev
 \end{itemize}
@@ -69,7 +69,7 @@ mkdir -p /home/postgres/bin/9.3
 ./configure --prefix=/home/postgres/bin/9.3
 \end{verbatim}
 
-The configuration script will check all the dependencies and, if there's no error, will generate 
+The configuration script will check all the dependencies and, if there's no error, will generate
 the makefiles. Then we can start the build simply running the command \textit{make}. The time
 required for compiling is variable and depends on the system's power. If you have a multicore
 processor the make -j option can significantly improve the build time. When the build is complete
@@ -80,7 +80,7 @@ malfunction before the binaries are installed.
 make
 <very verbose output>
 
-make check 
+make check
 
 \end{verbatim}
 
@@ -96,33 +96,33 @@ make install
 \section{Packaged install}
 \label{sec:DEBIAN_INSTALL}
 
-The PostgreSQL Global Development Group manages a repository in order to facilitate 
-installations on Debian based Linux distributions using Debian's packaging system. 
+The PostgreSQL Global Development Group manages a repository in order to facilitate
+installations on Debian based Linux distributions using Debian's packaging system.
 
 Currently the supported distributions are
 
 \begin{itemize}
  \item Debian 6.0 (squeeze)
  \item Debian 7.0 (wheezy)
- \item Debian unstable (sid) 
+ \item Debian unstable (sid)
  \item Ubuntu 10.04 (lucid)
  \item Ubuntu 12.04 (precise)
  \item Ubuntu 13.10 (saucy)
- \item Ubuntu 14.04 (trusty) 
+ \item Ubuntu 14.04 (trusty)
 \end{itemize}
 
-The PostgreSQL's versions available are 
+The PostgreSQL's versions available are
 \begin{itemize}
- \item PostgreSQL 9.0 
- \item PostgreSQL 9.1 
- \item PostgreSQL 9.2 
+ \item PostgreSQL 9.0
+ \item PostgreSQL 9.1
+ \item PostgreSQL 9.2
  \item PostgreSQL 9.3
  \item PostgreSQL 9.4
 \end{itemize}
 
 The packages are available for both amd64 and i386 architectures.
 
-Anyway, the up to date list is available on the the wiki page 
+Anyway, the up to date list is available on the the wiki page
 \href{http://wiki.postgresql.org/wiki/Apt}{http://wiki.postgresql.org/wiki/Apt}.\newline
 
 All the installation steps require root privileges, via sudo or acquiring the root login via su.
@@ -141,7 +141,7 @@ deb http://apt.postgresql.org/pub/repos/apt/ {codename}-pgdg main
 \end{verbatim}
 
 
-The distribution's codename can be found using the command lsb\_release -c. 
+The distribution's codename can be found using the command lsb\_release -c.
 e.g.
 \begin{verbatim}
 thedoctor@tardis:~$ lsb_release -c
@@ -152,7 +152,7 @@ After the repository configuration the installation is completed with two simple
 
 \begin{verbatim}
 apt-get update
-apt-get install postgreql-9.3 postgreql-contrib-9.3 postgreql-client-9.3 
+apt-get install postgreql-9.3 postgreql-contrib-9.3 postgreql-client-9.3
 \end{verbatim}
 
 Be aware that this method, as automated installation task creates a new database cluster in

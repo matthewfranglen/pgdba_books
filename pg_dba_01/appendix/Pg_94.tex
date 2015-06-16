@@ -8,7 +8,7 @@ This long waited feature gives the DBA the power to alter the configuration para
 from the SQL client. The parameters are validated when the command is issued. Invalid values
 are spotted immediately reducing the risk of having an hosed cluster because of syntax errors.
 
-For example, the following command sets the parameter wal\_level to hot\_standby. 
+For example, the following command sets the parameter wal\_level to hot\_standby.
 \begin{lstlisting}[style=pgsql]
  ALTER SYSTEM SET wal_level = hot_standby;
 
@@ -28,7 +28,7 @@ result in a reduced CPU usage for managing large amount of memory on Linux.
 With the replication slots the master becomes aware of the slave's replication status. The master
 with replication slots allocated does not remove the WAL segments until they have been received by all
 the standbys. Also the master does not remove the rows which could cause a recovery conflict even when
-the standby is disconnected. 
+the standby is disconnected.
 
 \section{Planning time}
 Now EXPLAIN ANALYZE shows the time spent by the planner to build the execution plan, giving to the

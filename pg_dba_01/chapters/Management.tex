@@ -1,25 +1,25 @@
 \chapter{Managing the cluster}
 \label{cha:MANAGING}
-A PostgreSQL cluster is made of two components. A physical location initialised as data area 
-and the postgres process attached to a shared memory segment, the shared buffer. The debian's 
-package's installation, automatically set up a fully functional PostgreSQL cluster in the directory 
+A PostgreSQL cluster is made of two components. A physical location initialised as data area
+and the postgres process attached to a shared memory segment, the shared buffer. The debian's
+package's installation, automatically set up a fully functional PostgreSQL cluster in the directory
 /var/lib/postgresql. This is good because it's possible to explore the product immediately.
-However, 
-it's not uncommon to find clusters used in production with the minimal default configuration's 
-values, just because the binary installation does not make it clear what happens \textit{under the 
+However,
+it's not uncommon to find clusters used in production with the minimal default configuration's
+values, just because the binary installation does not make it clear what happens \textit{under the
 bonnet}.
 
-This chapter will explain how a PostgreSQL cluster works and how critical is its 
-management. 
+This chapter will explain how a PostgreSQL cluster works and how critical is its
+management.
 
 \section{Initialising the data directory}
 \label{sec:INITPGDATA}
-The data area is initialised by initdb\index{initdb}. The program requires an empty directory to 
-write into to successful complete. Where the initdb binary is located depends from the installation 
-method. We already discussed of this in \ref{cha:INSTALLSTRUCT} and \ref{cha:DB_INSTALL}. 
+The data area is initialised by initdb\index{initdb}. The program requires an empty directory to
+write into to successful complete. Where the initdb binary is located depends from the installation
+method. We already discussed of this in \ref{cha:INSTALLSTRUCT} and \ref{cha:DB_INSTALL}.
 
-The accepted parameters for customising cluster's data area are various. Anyway, running 
-initdb without parameters will make the program to use the value stored into the environment 
+The accepted parameters for customising cluster's data area are various. Anyway, running
+initdb without parameters will make the program to use the value stored into the environment
 variable PGDATA. If the variable is unset the program will exit without any further action.\newline
 
 For example, using the initdb shipped with the debian archive requires the following commands.
@@ -28,7 +28,7 @@ For example, using the initdb shipped with the debian archive requires the follo
 postgres@tardis:~/$ mkdir tempdata
 postgres@tardis:~/$ cd tempdata
 postgres@tardis:~/tempdata$ export PGDATA=`pwd`
-postgres@tardis:~/tempdata$ /usr/lib/postgresql/9.3/bin/initdb 
+postgres@tardis:~/tempdata$ /usr/lib/postgresql/9.3/bin/initdb
 The files belonging to this database system will be owned by user "postgres".
 This user must also own the server process.
 
@@ -67,23 +67,23 @@ Success. You can now start the database server using:
 
     /usr/lib/postgresql/9.3/bin/postgres -D /var/lib/postgresql/tempdata
 or
-    /usr/lib/postgresql/9.3/bin/pg_ctl -D /var/lib/postgresql/tempdata -l 
+    /usr/lib/postgresql/9.3/bin/pg_ctl -D /var/lib/postgresql/tempdata -l
 logfile start
 
 \end{verbatim}
 
-PostgreSQL 9.3 introduces\index{checksums, data page}\index{data page checksums} the data page 
-checksums used for detecting the data page corruption. This great feature can be enabled only when 
-initialising the data area with initdb and is cluster wide. The extra overhead caused by the 
-checksums is something to consider because the only way to disable the data checksums is a dump 
+PostgreSQL 9.3 introduces\index{checksums, data page}\index{data page checksums} the data page
+checksums used for detecting the data page corruption. This great feature can be enabled only when
+initialising the data area with initdb and is cluster wide. The extra overhead caused by the
+checksums is something to consider because the only way to disable the data checksums is a dump
 and reload on a fresh data area.\newline
 
-After initialising the data directory initdb emits the message with the commands to start the 
-database cluster. The first form is useful for debugging and development purposes because it starts 
-the database directly from the command line with the output displayed on the terminal. 
+After initialising the data directory initdb emits the message with the commands to start the
+database cluster. The first form is useful for debugging and development purposes because it starts
+the database directly from the command line with the output displayed on the terminal.
 
 \begin{verbatim}
-postgres@tardis:~/tempdata$ /usr/lib/postgresql/9.3/bin/postgres -D 
+postgres@tardis:~/tempdata$ /usr/lib/postgresql/9.3/bin/postgres -D
 /var/lib/postgresql/tempdata
 LOG:  database system was shut down at 2014-03-23 18:52:07 UTC
 LOG:  database system is ready to accept connections
@@ -93,17 +93,17 @@ LOG:  autovacuum launcher started
 
 Pressing CTRL+C stops the cluster with a fast shutdown.\newline
 
-Starting the cluster with pg\_ctl usage is very simple. This program also accepts the data area as 
-parameter or using the environment variable PGDATA. It's also required to provide the command to 
+Starting the cluster with pg\_ctl usage is very simple. This program also accepts the data area as
+parameter or using the environment variable PGDATA. It's also required to provide the command to
 execute. The start command for example is used to start the cluster in multi user mode.
 
 \begin{verbatim}
 
-postgres@tardis:~/tempdata$ /usr/lib/postgresql/9.3/bin/pg_ctl -D 
+postgres@tardis:~/tempdata$ /usr/lib/postgresql/9.3/bin/pg_ctl -D
 /var/lib/postgresql/tempdata -l logfile start
 server starting
 
-postgres@tardis:~/tempdata$ tail logfile 
+postgres@tardis:~/tempdata$ tail logfile
 LOG:  database system was shut down at 2014-03-23 19:01:19 UTC
 LOG:  database system is ready to accept connections
 LOG:  autovacuum launcher started
@@ -114,7 +114,7 @@ Omitting the logfile with the -l will display the alerts and warnings on the ter
 The command stop will end the cluster's activity.
 
 \begin{verbatim}
-postgres@tardis:~$ /usr/lib/postgresql/9.3/bin/pg_ctl -D 
+postgres@tardis:~$ /usr/lib/postgresql/9.3/bin/pg_ctl -D
 /var/lib/postgresql/tempdata -l logfile stop
 waiting for server to shut down.... done
 server stopped
@@ -175,10 +175,10 @@ segment in the pg\_xlog directory. Any corruption in the wal files during the re
 pg\_control file results in a not startable instance.\newline
 
 When the recovery is complete or if the cluster's state is clean the postgres process completes the
-startup and sets the cluster in production state. 
+startup and sets the cluster in production state.
 
 
-\section{The shutdown sequence} 
+\section{The shutdown sequence}
 \label{sec:SHUTDOWN_SEQ}
 \index{shutdown sequence}
 
@@ -217,7 +217,7 @@ The subsequent start will require a crash recovery. The recovery is usually harm
 important exception. If the cluster contains unlogged tables those relations are recreated from
 scratch when the recovery happens and all the data in those table is lost.
 
-A final word about the SIGKILL signal, the dreaded kill -9. It could happen the cluster will not stop even 
+A final word about the SIGKILL signal, the dreaded kill -9. It could happen the cluster will not stop even
 using the immediate mode. In this case, the last resort is to use SIGKILL. Because this signal
 cannot be trapped in any way, the resources like the shared memory and the inter process semaphores
 will stay in place after killing the server. This will very likely affect the start of a fresh instance.
@@ -227,7 +227,7 @@ SIGKILL.
 \section{The processes}
 \label{sec:PROCESSES}
 Alongside with postgres process there are a number of accessory processes. With a running 9.3
-cluster ps shows at least six postgres processes. 
+cluster ps shows at least six postgres processes.
 
 \subsection{postgres: checkpointer process}
 As the name suggests this process take care of the cluster's checkpoint\index{checkpoint} activity.
@@ -251,21 +251,21 @@ between two runs.
 This background process has been introduced with the 9.3 in order to make the WAL writes a more
 efficient. The process works in rounds and writes down the wal buffers to the  wal files. The GUC
 parameter wal\_writer\_delay\index{wal\_writer\_delay} sets the milliseconds to sleep between the
-rounds. 
+rounds.
 
 \subsection{postgres: autovacuum launcher process}
 This process is present if the autovacuum\index{autovacuum} is enabled. It's purpose is to launch
-the autovacuum backends when needed. 
+the autovacuum backends when needed.
 
 \subsection{postgres: stats collector process}
 The process gathers the database's usage statistics and stores the information to the location
 indicated by the GUC stats\_temp\_directory. This is by default pg\_stat\_temp, a relative path to
-the data area. 
+the data area.
 
 \subsection{postgres: postgres postgres [local] idle}
 This is a database backend. There is one backend for each established connection. The values after
 the colon show useful information. In particular between the square brackets there is the query
-the backend is executing. 
+the backend is executing.
 
 \section{The memory}
 \label{sec:MEMORY}
@@ -289,7 +289,7 @@ Any data operation is performed loading the data pages in the shared buffer. Alo
 benefits of the memory cache there is the enforcement of the data consistency at any time.\newline
 
 In particular, if any backend crash happens PostgreSQL resets all the existing connections to
-protect the shared buffer from potential corruption. 
+protect the shared buffer from potential corruption.
 
 
 
@@ -301,13 +301,13 @@ the postgresql.conf file.In this case the change becomes effective immediately a
 reloads the configuration file.\newline
 
 A correct size for this memory can improve the performance of any memory intensive operation like
-the sorts. It's very important to set this value to a reasonable size in order to avoid any risk of 
+the sorts. It's very important to set this value to a reasonable size in order to avoid any risk of
 out of memory error or unwanted swap.\newline
 
 
 \subsection{The maintenance work memory}\index{maintenance work memory}
 The maintenance work memory is set with the parameter maintenance\_work\_mem and like the work\_mem
-is allocated for each connected session. PostgreSQL uses this memory in the maintenance operations 
+is allocated for each connected session. PostgreSQL uses this memory in the maintenance operations
 like VACUUM or REINDEX. The value can be bigger than work\_mem. In \ref{sec:VACUUM}
 there are more information about it. The maintenance\_work\_mem value can be set on the session or
 globally like the work memory.
@@ -336,7 +336,7 @@ Two of them are the template databases,template0 and template1. The third is the
 In \ref{cha:LOGICLAY}  there are more information about the logical structure.\newline
 
 Each database directory contains many files with the numerical names. They are the
-physical database's files, tables indices etc.\newline 
+physical database's files, tables indices etc.\newline
 
 The relation's file name is set initially using the relation's object id. Because there are
 operations that  can change the file name (e.g. VACUUM FULL, REINDEX) PostgreSQL tracks the file
@@ -355,7 +355,7 @@ and is used to store the records for the pages changed in the shared buffer. The
 on on this durable storage ensures the cluster's crash recovery. In the event of a crash
 the WAL are replayed when the startup begins from the last checkpoint location read from control
 file.Because this directory is heavily written, putting it on a dedicated device improves the
-performance. 
+performance.
 
 \subsection{pg\_clog}\index{data area, pg\_clog}
 This directory contains the status of the committed transactions stored in many files, each one
@@ -363,7 +363,7 @@ big like a data page. The directory does not store the status of the transaction
 with the SERIALIZABLE isolation. The directory is managed by PostgreSQL. The number of files is
 controlled by the two parameters autovacuum\_freeze\_max\_age and vacuum\_freeze\_table\_age.
 They control the ``event horizon'' of the oldest frozen transaction id and the pg\_clog must
-store the commit status accordingly. 
+store the commit status accordingly.
 
 \subsection{pg\_serial}\index{data area, pg\_serial}
 This directory is similar to the pg\_clog except the commit statuses are only for the transactions
@@ -383,27 +383,27 @@ can export a consistent snapshot to the other sessions. More details about the s
 
 
 \subsection{pg\_stat\_tmp}\index{data area, pg\_stat\_tmp}
-This directory contains the temporary files generated by the statistic subsystem. 
+This directory contains the temporary files generated by the statistic subsystem.
 Because the directory is constantly written, changing its location to a ramdisk can improve the
 performance. The parameter stats\_temp\_directory can be changed with a simple reload.
 
 \subsection{pg\_stat}\index{data area, pg\_stat}
 This directory contains the files saved permanently by the statistic subsystem to keep them
-persistent between the restarts. 
+persistent between the restarts.
 
 \subsection{pg\_subtrans}\index{data area, pg\_subtrans}
-In this folder there are the subtransactions statuses. 
+In this folder there are the subtransactions statuses.
 
 \subsection{pg\_twophase}\index{data area, pg\_twophase}
 There is where PostgreSQL saves the two phase commit's data. This feature allow a transaction to
 become independent from the backend status. If the backend disconnects, for example in a network
 outage, the transaction does not rollbacks waiting for another backend to pick it up and complete
-the commit. 
+the commit.
 
 \subsection{pg\_tblspc}\index{data area, pg\_tblspc}
 \label{sub:TABLESPACE}
 In this folder there are the symbolic links to the tablespace locations.
-In \ref{sub:TBS-LOGICAL} and \ref{sub:TBS-PHYSICAL} there are more informations about it. 
+In \ref{sub:TBS-LOGICAL} and \ref{sub:TBS-PHYSICAL} there are more informations about it.
 
 
 

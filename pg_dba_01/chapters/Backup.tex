@@ -268,7 +268,7 @@ accessed for reading, then an access share lock is set preventing any structure 
 relations are stored into the pg\_locks table. This table is quite unique because have a limited amount of
 rows determined with the formula.\newline
 \begin{math}
- max_locks_per_transaction * (max_connections + max_prepared_transactions)
+    max_locks_per_transaction * (max_connections + max_prepared_transactions)
 \end{math}\newline
 
 The default settings allow just 6400 lock slots. This value is generally OK.
@@ -292,15 +292,15 @@ later though. The transaction is also set to READ ONLY, when supported by the se
 the XID generation. \newline
 
 \begin{table}[H]
-  \begin{tabular}{ll}
-    Server version & Command    \\
-    \hline
-    \textgreater=  9.1 &  REPEATABLE READ, READ ONLY        \\
-    \textgreater= 9.1 with --serializable-deferrable  &  SERIALIZABLE, READ ONLY, DEFERRABLE  \\
-    \textgreater= 7.4 &  SERIALIZABLE READ ONLY   \\
-    \textless 7.4 &  SERIALIZABLE \\
-  \end{tabular}
-  \caption{\label{tab:TRNPGDUMP}pg\_dump's transaction isolation levels }
+    \begin{tabular}{ll}
+        Server version & Command    \\
+        \hline
+        \textgreater=  9.1 &  REPEATABLE READ, READ ONLY        \\
+        \textgreater= 9.1 with --serializable-deferrable  &  SERIALIZABLE, READ ONLY, DEFERRABLE  \\
+        \textgreater= 7.4 &  SERIALIZABLE READ ONLY   \\
+        \textless 7.4 &  SERIALIZABLE \\
+    \end{tabular}
+    \caption{\label{tab:TRNPGDUMP}pg\_dump's transaction isolation levels }
 \end{table}
 
 From the version 9.3 pg\_dump supports also the parallel dump using the feature seen in

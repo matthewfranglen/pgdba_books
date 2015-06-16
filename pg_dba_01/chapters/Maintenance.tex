@@ -21,10 +21,10 @@ target table, the command scans all the tables in the database. A regular VACUUM
 effects.
 
 \begin{itemize}
- \item Removes the dead tuples and updates the free space map.
- \item Updates the visibility map improving the index only scans.
- \item It freezes the tuples with ageing XID preventing the XID wraparound\index{XID wraparound
-failure}
+    \item Removes the dead tuples and updates the free space map.
+    \item Updates the visibility map improving the index only scans.
+    \item It freezes the tuples with ageing XID preventing the XID wraparound\index{XID wraparound
+        failure}
 \end{itemize}
 
 The optional ANALYZE clause gathers the runtime statistics on processed table.\newline
@@ -417,7 +417,7 @@ readable format by the view pg\_stats\index{pg\_stats, view}.\newline
 
 The rule of thumb when dealing with poorly performing queries, is to check if statistics are recent
 and accurate. The information is stored into the view pg\_stat\_all\_tables \footnote{The subset views
-pg\_stat\_user\_tables and pg\_stat\_sys\_tables are useful to search respectively the current user and the
+    pg\_stat\_user\_tables and pg\_stat\_sys\_tables are useful to search respectively the current user and the
 system tables only.}.
 
 For example this query gets, for a certain table,  the last execution of the manual and the auto vacuum
@@ -586,14 +586,14 @@ the index becomes valid. \newline
 
 The concurrent index build have indeed some caveats and limitations.
 \begin{itemize}
- \item Any problem with the table scan will fail the command and leaving an invalid index in place.
-This relation is not used for the reads but adds an extra overhead to the inserts and updates.
-\item When building an unique index concurrently this start enforcing the uniqueness when the
-second table scan starts. Some transactions could then start reporting the uniqueness violation
-before the index becoming available. In the case the build fails on the second table scan the invalid
-index will enforce the uniqueness regardless of its status.
-\item Regular index builds can run in parallel on the same table. Concurrent index builds cannot.
-\item Concurrent index builds cannot run within a transaction block.
+    \item Any problem with the table scan will fail the command and leaving an invalid index in place.
+        This relation is not used for the reads but adds an extra overhead to the inserts and updates.
+    \item When building an unique index concurrently this start enforcing the uniqueness when the
+        second table scan starts. Some transactions could then start reporting the uniqueness violation
+        before the index becoming available. In the case the build fails on the second table scan the invalid
+        index will enforce the uniqueness regardless of its status.
+    \item Regular index builds can run in parallel on the same table. Concurrent index builds cannot.
+    \item Concurrent index builds cannot run within a transaction block.
 \end{itemize}
 
 The primary keys and unique constraints can be swapped like the indices using a different

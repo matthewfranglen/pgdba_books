@@ -50,20 +50,20 @@ the pg\_size\_pretty(bigint), returns a human readable format for better reading
 The pg\_class's field relkind is used to store the relation's kind.
 
 \begin{table}[h]
-  \begin{tabular}{cc}
-    Value & Relation's kind\\
-    \hline
-    r  &  ordinary table \\
-    i  &  index \\
-    S  &  sequence \\
-    v  &  view \\
-    m  &  materialised view \\
-    c  &  composite type \\
-    t  &  TOAST table \\
-    f  &  foreign table \\
+    \begin{tabular}{cc}
+        Value & Relation's kind\\
+        \hline
+        r  &  ordinary table \\
+        i  &  index \\
+        S  &  sequence \\
+        v  &  view \\
+        m  &  materialised view \\
+        c  &  composite type \\
+        t  &  TOAST table \\
+        f  &  foreign table \\
 
-  \end{tabular}
-  \caption{\label{tab:RELKIND}Relkind values}
+    \end{tabular}
+    \caption{\label{tab:RELKIND}Relkind values}
 \end{table}
 
 \section{Pages}\index{Data pages}
@@ -77,13 +77,13 @@ to store information needed by the relation's structure. For example a B-tree in
 puts in the special space the pointers to the pages below in the B-tree structure.
 
 \begin{figure}[H]
-\begin{center}
+    \begin{center}
 
-\includegraphics[scale=0.35]{images/index_page_01.png}
+        \includegraphics[scale=0.35]{images/index_page_01.png}
 
-\caption{Index page}
-\label{fig:INDEX01}
-\end{center}
+        \caption{Index page}
+        \label{fig:INDEX01}
+    \end{center}
 
 \end{figure}
 
@@ -97,28 +97,28 @@ in figure \ref{fig:HEADERPAG01}.
 
 
 \begin{figure}[H]
-\begin{center}
+    \begin{center}
 
-\includegraphics[scale=0.55]{images/header_page_01.png}
+        \includegraphics[scale=0.55]{images/header_page_01.png}
 
-\caption{Page header}
-\label{fig:HEADERPAG01}
-\end{center}
+        \caption{Page header}
+        \label{fig:HEADERPAG01}
+    \end{center}
 
 \end{figure}
 \begin{itemize}
- \item \textbf{pd\_lsn} identifies the xlog record for last page's change.  The
-buffer manager uses the  LSN for enforcing the WAL mechanism. A dirty buffer is not
-dumped to the disk until the xlog has been flushed at least as far as the page's LSN.
-\item \textbf{pd\_checksum} stores the page's checksum if is enabled.
-\item \textbf{pd\_flags} is used to store the page's various flags
-\item \textbf{pg\_lower} is the offset to the start of the free space
-\item \textbf{pg\_upper} is the offset to the end of the free space
-\item \textbf{pg\_special} is the offset to the start of the special space
-\item \textbf{pd\_pagesize\_version} is the page size and the page version packed
-together in a single field.
-\item \textbf{pg\_prune\_xid} is a hint field to determine if the tuple's pruning is
-useful. Is set only on the heap pages.
+    \item \textbf{pd\_lsn} identifies the xlog record for last page's change.  The
+        buffer manager uses the  LSN for enforcing the WAL mechanism. A dirty buffer is not
+        dumped to the disk until the xlog has been flushed at least as far as the page's LSN.
+    \item \textbf{pd\_checksum} stores the page's checksum if is enabled.
+    \item \textbf{pd\_flags} is used to store the page's various flags
+    \item \textbf{pg\_lower} is the offset to the start of the free space
+    \item \textbf{pg\_upper} is the offset to the end of the free space
+    \item \textbf{pg\_special} is the offset to the start of the special space
+    \item \textbf{pd\_pagesize\_version} is the page size and the page version packed
+        together in a single field.
+    \item \textbf{pg\_prune\_xid} is a hint field to determine if the tuple's pruning is
+        useful. Is set only on the heap pages.
 
 \end{itemize}
 
@@ -136,18 +136,18 @@ The field for the page version\index{Page version} was introduced with PostgreSQ
 Table \ref{tab:PGPAGEVERSION} shows the page version number for the major versions.
 
 \begin{table}[h]
-  \begin{tabular}{cc}
-    PostgreSQL version & Page version\\
-    \hline
-    \textgreater \space 8.3  &  4\\
-    8.1,8.2  &  3\\
-    8.0  &  2\\
-    7.4,7.3  &  1\\
-    \textless \space 7.3  &  0\\
+    \begin{tabular}{cc}
+        PostgreSQL version & Page version\\
+        \hline
+        \textgreater \space 8.3  &  4\\
+        8.1,8.2  &  3\\
+        8.0  &  2\\
+        7.4,7.3  &  1\\
+        \textless \space 7.3  &  0\\
 
 
-  \end{tabular}
-  \caption{\label{tab:PGPAGEVERSION}PostgreSQL page version}
+    \end{tabular}
+    \caption{\label{tab:PGPAGEVERSION}PostgreSQL page version}
 \end{table}
 
 \section{Tuples}\index{Tuples}
@@ -157,13 +157,13 @@ is initially unknown, the datum. Each tuple have a fixed header of 23 bytes as s
 \ref{fig:TUPLES01}.\newline
 
 \begin{figure}[H]
-\begin{center}
+    \begin{center}
 
-\includegraphics[scale=0.55]{images/tuples_01.png}
+        \includegraphics[scale=0.55]{images/tuples_01.png}
 
-\caption{Tuple structure}
-\label{fig:TUPLES01}
-\end{center}
+        \caption{Tuple structure}
+        \label{fig:TUPLES01}
+    \end{center}
 
 \end{figure}
 

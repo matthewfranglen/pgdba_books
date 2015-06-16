@@ -39,18 +39,18 @@ The word ACID is an acronym for Atomicity, Consistency, Isolation and Durability
 ACID compliant database ensures those rules are enforced at all times. \newline
 \begin{itemize}
 
-\item The atomiticy is enforced when a transaction is ``all or nothing''. For example: If a
-transaction inserts a group of new rows and just one row violates the primary key then the entire
-transaction must be rolled back leaving the table as if nothing happened.
+    \item The atomiticy is enforced when a transaction is ``all or nothing''. For example: If a
+        transaction inserts a group of new rows and just one row violates the primary key then the entire
+        transaction must be rolled back leaving the table as if nothing happened.
 
-\item The consistency ensures the database is constantly in a valid state. The database steps from
-one valid state to another valid state with no exceptions.
+    \item The consistency ensures the database is constantly in a valid state. The database steps from
+        one valid state to another valid state with no exceptions.
 
- \item The isolation is enforced when the database status can be reached as if all the concurrent
-transactions were run in serial.
+    \item The isolation is enforced when the database status can be reached as if all the concurrent
+        transactions were run in serial.
 
-\item The durability ensures the committed transactions are saved on durable storage. In the event
-of a database crash the database must restore itself to the last valid state.
+    \item The durability ensures the committed transactions are saved on durable storage. In the event
+        of a database crash the database must restore itself to the last valid state.
 
 \end{itemize}
 

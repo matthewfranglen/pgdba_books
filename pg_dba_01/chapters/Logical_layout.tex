@@ -17,24 +17,24 @@ use. If PostgreSQL reaches the end of the file without match the connection is r
 The pg\_hba.conf structure is shown in \ref{tab:PGHBA}
 
 \begin{table}[H]
-  \begin{tabular}{ccccc}
-    Type & Database & User & Address & Method \\
-    \hline
-    local & name & name & ipaddress/network mask & trust\\
-    host & * & * & host name & reject\\
-    hostssl & &  &  & md5\\
-    hostnossl & &  &  & password \\
-    & & &  & gss \\
-    & & &  & sspi \\
-    & & &  & krb5 \\
-    & & &  & ident \\
-    & & &  & peer \\
-    & & &  & pam \\
-    & & &  & ldap \\
-    & & &  & radius \\
-    & & &  & cert \\
-  \end{tabular}
-  \caption{\label{tab:PGHBA}pg\_hba.conf}
+    \begin{tabular}{ccccc}
+        Type & Database & User & Address & Method \\
+        \hline
+        local & name & name & ipaddress/network mask & trust\\
+        host & * & * & host name & reject\\
+        hostssl & &  &  & md5\\
+        hostnossl & &  &  & password \\
+                  & & &  & gss \\
+                  & & &  & sspi \\
+                  & & &  & krb5 \\
+                  & & &  & ident \\
+                  & & &  & peer \\
+                  & & &  & pam \\
+                  & & &  & ldap \\
+                  & & &  & radius \\
+                  & & &  & cert \\
+    \end{tabular}
+    \caption{\label{tab:PGHBA}pg\_hba.conf}
 \end{table}
 
 The column type specifies if the connection is local or host. The former is when the connection is
@@ -54,22 +54,22 @@ challenge to kerberos.\newline
 We'll now take a look to the built in methods.
 
 \begin{itemize}
- \item \textbf{trust}: The connection is authorised without any further action. Is quite useful
-if the password is lost. Use it with caution.
+    \item \textbf{trust}: The connection is authorised without any further action. Is quite useful
+        if the password is lost. Use it with caution.
 
-\item \textbf{peer}: The connection is authorised if the OS user matches the
-database user. It's useful for the local connections.
+    \item \textbf{peer}: The connection is authorised if the OS user matches the
+        database user. It's useful for the local connections.
 
-\item \textbf{password}: The connection establishes if the connection's user and the password
-matches with the values stored in the pg\_shadow system table. This method sends the password in
-clear text. Should be used only on trusted networks.
+    \item \textbf{password}: The connection establishes if the connection's user and the password
+        matches with the values stored in the pg\_shadow system table. This method sends the password in
+        clear text. Should be used only on trusted networks.
 
-\item \textbf{md5}: This method is similar to password. It uses a better security encoding the
-passwords using the md5 algorithm. Because md5 is deterministic, there is pseudo random
-subroutine which prevents to have the same string sent over the network.
+    \item \textbf{md5}: This method is similar to password. It uses a better security encoding the
+        passwords using the md5 algorithm. Because md5 is deterministic, there is pseudo random
+        subroutine which prevents to have the same string sent over the network.
 
-\item \textbf{reject}: The connection is rejected. This method is very useful to keep the sessions
-out of the database. e.g. maintenance requiring single user mode.
+    \item \textbf{reject}: The connection is rejected. This method is very useful to keep the sessions
+        out of the database. e.g. maintenance requiring single user mode.
 
 \end{itemize}
 
@@ -81,7 +81,7 @@ Unfortunately this approach have a couple of unpleasant side effects.\newline
 
 Changing any connection related parameter like the max\_connections, requires a cluster restart.
 For this reason planning the resources is absolutely vital. For each connection present in
- max\_connections the cluster allocates 400 bytes of shared memory. For each connection established
+max\_connections the cluster allocates 400 bytes of shared memory. For each connection established
 the cluster allocates a per user memory area wich size is determined by the parameter
 work\_mem.\newline
 
@@ -158,7 +158,7 @@ database does not corrupts the cluster. Because this database is often used by t
 tools before dropping it check if is in use in any way.\newline
 
 The databases template0 and template1 \index{template1 database} \index{template0
-database} like the name suggests are the template databases. A template database \index{template
+    database} like the name suggests are the template databases. A template database \index{template
 database} is used to build new database copies via the physical file copy.
 
 When initdb initialises the data area the database template1 is populated with the correct
@@ -509,19 +509,19 @@ simple views. A view is defined simple when the following is true.
 \begin{itemize}
 
 
- \item  Does have exactly one entry in its FROM list, which must be a table or another updatable view.
+    \item  Does have exactly one entry in its FROM list, which must be a table or another updatable view.
 
- \item Does not contain WITH, DISTINCT, GROUP BY, HAVING,LIMIT, or OFFSET clauses at the top level.
+    \item Does not contain WITH, DISTINCT, GROUP BY, HAVING,LIMIT, or OFFSET clauses at the top level.
 
- \item  Does not contain set operations (UNION, INTERSECT or EXCEPT) at the top level
+    \item  Does not contain set operations (UNION, INTERSECT or EXCEPT) at the top level
 
- \item   All columns in the view's select list must be simple references to columns of the
-underlying relation. They cannot be expressions, literals or functions. System columns cannot be
-referenced, either.
+    \item   All columns in the view's select list must be simple references to columns of the
+        underlying relation. They cannot be expressions, literals or functions. System columns cannot be
+        referenced, either.
 
- \item   Columns of the underlying relation do not appear more than once in the view's select list.
+    \item   Columns of the underlying relation do not appear more than once in the view's select list.
 
- \item   Does not have the security\_barrier property.
+    \item   Does not have the security\_barrier property.
 
 \end{itemize}
 
@@ -646,15 +646,15 @@ following transaction's anomalies.
 \index{transactions, isolation levels}
 
 \begin{itemize}
- \item \textbf{dirty read}\index{dirty read}, when a transaction can access the data written by a
-concurrent not committed transaction.
+    \item \textbf{dirty read}\index{dirty read}, when a transaction can access the data written by a
+        concurrent not committed transaction.
 
-\item \textbf{non repeatable read}\index{non repeatable read}, when a transaction repeats a previous read
-and finds the data changed by another transaction which has committed since the initial read.
+    \item \textbf{non repeatable read}\index{non repeatable read}, when a transaction repeats a previous read
+        and finds the data changed by another transaction which has committed since the initial read.
 
-\item \textbf{phantom read}\index{phantom read}, when a transaction executes a previous query and
-finds a different set of rows with the same search condition because the results was changed by another
-committed transaction
+    \item \textbf{phantom read}\index{phantom read}, when a transaction executes a previous query and
+        finds a different set of rows with the same search condition because the results was changed by another
+        committed transaction
 
 \end{itemize}
 
@@ -664,16 +664,16 @@ isolation level to read uncommited does not cause an error. However, the system 
 level to read committed.
 
 \begin{table}[H]
-  \begin{tabular}{cccc}
-    Isolation Level & Dirty Read    &    Nonrepeatable Read   &   Phantom
-Read\\
-    \hline
-    Read uncommitted  &  Possible    &    Possible     &   Possible\\
-    Read committed    &  Not possible &  Possible     &   Possible\\
-    Repeatable read   &  Not possible  & Not possible  &  Possible\\
-    Serializable      &  Not possible  & Not possible   & Not possible\\
-  \end{tabular}
-  \caption{\label{tab:TRNISOLATION}SQL Transaction isolation levels}
+    \begin{tabular}{cccc}
+        Isolation Level & Dirty Read    &    Nonrepeatable Read   &   Phantom
+        Read\\
+        \hline
+        Read uncommitted  &  Possible    &    Possible     &   Possible\\
+        Read committed    &  Not possible &  Possible     &   Possible\\
+        Repeatable read   &  Not possible  & Not possible  &  Possible\\
+        Serializable      &  Not possible  & Not possible   & Not possible\\
+    \end{tabular}
+    \caption{\label{tab:TRNISOLATION}SQL Transaction isolation levels}
 \end{table}
 
 The isolation level can be set per session with the command SET TRANSACTION ISOLATION LEVEL.

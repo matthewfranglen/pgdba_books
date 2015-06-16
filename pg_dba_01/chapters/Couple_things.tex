@@ -56,49 +56,49 @@ kind.\newline
 
 
 \begin{table}[H]
-\begin{tabular}{ll}
- \textbf{Object} & \textbf{Prefix}  \\
- \hline
- Table & t\_ \\
- View & v\_ \\
-Btree Index & idx\_bt\_ \\
-GiST Index & idx\_gst\_ \\
-GIN Index & idx\_gin\_ \\
-Unique index & u\_idx\_ \\
-Primary key & pk\_ \\
-Foreign key & fk\_ \\
-Check & chk\_ \\
-Unique key & uk\_ \\
-Type & ty\_ \\
-Sql function & fn\_sql\_ \\
-PlPgsql function & fn\_plpg\_ \\
-PlPython function & fn\_plpy\_ \\
-PlPerl function & fn\_plpr\_ \\
-Trigger & trg\_ \\
-rule & rul\_ \\
+    \begin{tabular}{ll}
+        \textbf{Object} & \textbf{Prefix}  \\
+        \hline
+        Table & t\_ \\
+        View & v\_ \\
+        Btree Index & idx\_bt\_ \\
+        GiST Index & idx\_gst\_ \\
+        GIN Index & idx\_gin\_ \\
+        Unique index & u\_idx\_ \\
+        Primary key & pk\_ \\
+        Foreign key & fk\_ \\
+        Check & chk\_ \\
+        Unique key & uk\_ \\
+        Type & ty\_ \\
+        Sql function & fn\_sql\_ \\
+        PlPgsql function & fn\_plpg\_ \\
+        PlPython function & fn\_plpy\_ \\
+        PlPerl function & fn\_plpr\_ \\
+        Trigger & trg\_ \\
+        rule & rul\_ \\
 
-\end{tabular}
+    \end{tabular}
 \end{table}
 
 A similar approach can be used for the column names, making the data type immediately recognisable.
 
 \begin{table}[H]
-\begin{tabular}{ll}
- \textbf{Type} & \textbf{Prefix}  \\
- \hline
- Character & c\_ \\
- Character varying & v\_ \\
-Integer & i\_ \\
-Text & t\_ \\
-Bytea & by\_ \\
-Numeric & n\_ \\
-Timestamp & ts\_ \\
-Date & d\_ \\
-Double precision & dp\_ \\
-Hstore & hs\_ \\
-Custom data type & ty\_ \\
+    \begin{tabular}{ll}
+        \textbf{Type} & \textbf{Prefix}  \\
+        \hline
+        Character & c\_ \\
+        Character varying & v\_ \\
+        Integer & i\_ \\
+        Text & t\_ \\
+        Bytea & by\_ \\
+        Numeric & n\_ \\
+        Timestamp & ts\_ \\
+        Date & d\_ \\
+        Double precision & dp\_ \\
+        Hstore & hs\_ \\
+        Custom data type & ty\_ \\
 
-\end{tabular}
+    \end{tabular}
 \end{table}
 
 
@@ -116,11 +116,11 @@ where a.datnot=b. datnot and b.deblin>1;
 Let's list the query's issues.
 
 \begin{itemize}
- \item using lowercase keywords it makes difficult to distinguish them from the identifiers
-\item the wildcard * mask which fields  are really needed; returning all the fields consumes more bandwidth
-than required; it prevents the index only scans
-\item the meaningless aliases like \textit{a} and \textit{b} are confusing the query's logic
-\item without proper indention the query logic cannot be understood
+    \item using lowercase keywords it makes difficult to distinguish them from the identifiers
+    \item the wildcard * mask which fields  are really needed; returning all the fields consumes more bandwidth
+        than required; it prevents the index only scans
+    \item the meaningless aliases like \textit{a} and \textit{b} are confusing the query's logic
+    \item without proper indention the query logic cannot be understood
 \end{itemize}
 
 Despite existence of tools capable to prettify such queries, their usage doesn't solve the
@@ -130,12 +130,12 @@ as well the confusion when building the SQL. \newline
 The following rules should be kept in mind constantly when writing SQL.
 
 \begin{itemize}
- \item All SQL keywords should be in upper case
- \item All the identifiers and keywords should be grouped at same indention level and separated with a line
-break
- \item In the SELECT list avoid the wildcard *
- \item Specify explicitly the join method in order to make it clear the query's logic
- \item Adopt meaningful aliases
+    \item All SQL keywords should be in upper case
+    \item All the identifiers and keywords should be grouped at same indention level and separated with a line
+        break
+    \item In the SELECT list avoid the wildcard *
+    \item Specify explicitly the join method in order to make it clear the query's logic
+    \item Adopt meaningful aliases
 \end{itemize}
 
 This is the prettified query.

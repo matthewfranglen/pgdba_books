@@ -303,11 +303,11 @@ only one cpu over a list of obects to restore determined when pg\_resotore is st
 The switch --section works the same way as for pg\_dump controlling the section of the archived data to
 restore. The custom and directory format have these sections.
 \begin{itemize}
- \item \textbf{pre-data} This section contains the schema definitions without the keys, indices  and
-triggers.
-\item  \textbf{data} This section contains the tables's data contents.
-\item  \textbf{post-data} This section contains the objects enforcing the data integrity alongside with the
-triggers and the indices.
+    \item \textbf{pre-data} This section contains the schema definitions without the keys, indices  and
+        triggers.
+    \item  \textbf{data} This section contains the tables's data contents.
+    \item  \textbf{post-data} This section contains the objects enforcing the data integrity alongside with the
+        triggers and the indices.
 \end{itemize}
 
 The switch -C is used to create the target database before starting the restore. The connections need
